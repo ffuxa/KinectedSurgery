@@ -7,6 +7,7 @@ let kinectron = null;
 // Store all images in array
 let images = [];
 
+// This function runs before any other one
 function preload() {
   let i = 0;
   for (; i < 8; ++i) {
@@ -15,24 +16,22 @@ function preload() {
 }
 
 function setup() {
-  let width = window.innerWidth;
-  let height = window.innerHeight;
-
   // Create a p5 canvas
-  myCanvas = createCanvas(width, height);
+  myCanvas = createCanvas(windowWidth, windowHeight);
   
   // Set background color
   background(0);
 
   // Add images
   addImages();
+  // displayImage(0);
 
   // Initialize Kinectron
   initKinectron();
 }
 
 function addImages() {
-  fill('rgb(135,206,250)');   // light blue
+  fill('rgb(135, 206, 250)');   // light blue
 
   const margin = 40;
 
@@ -54,6 +53,16 @@ function addImages() {
   }
 }
 
+function displayImage(position) {
+  background(0);
+
+  console.log(images[position]);
+
+  const x = (windowWidth - images[position].width) / 2;
+  const y = (windowHeight - images[position].height) / 2;
+  let img = image(images[position], x, y);
+}
+
 function initKinectron() {
   // Define and create an instance of kinectron
   kinectron = new Kinectron("35.1.106.115");
@@ -66,7 +75,14 @@ function initKinectron() {
 }
 
 function logHandData(hands) {
-  console.log(hands.rightHandState);
+  if (hands.rightHandState === 'closed') {
+    /* TODO: 
+     *    - Determine which image is being selected
+     *    - Perhaps set timeout so it is not immediate
+     */
+
+    displayImage(0);
+  }
 }
 
 function drawRightHand(hand) {
