@@ -7,11 +7,29 @@ let kinectron = null;
 // Store all images in array
 let images = [];
 
+// img Object - stores the image p5 object,
+// its coordinates, width, and height
+function Img(imgObj) {
+  this.imgObj = imgObj;
+  this.x = 0; 
+  this.y = 0; 
+  this.w = 0;
+  this.h = 0;
+
+  this.coordinates = function(x, y, width, height) {
+    this.x = x; 
+    this.y = y; 
+    this.w = width;
+    this.h = height; 
+  }
+}
+
 // This function runs before any other one
 function preload() {
   let i = 0;
   for (; i < 8; ++i) {
-    images.push(loadImage('images/danny.jpg'));
+    let img = new Img(loadImage('images/danny.jpg'));
+    images.push(img); 
   }
 }
 
@@ -47,7 +65,8 @@ function addImages() {
     let y_coord;
 
     for (y_coord = margin; y_coord < window.innerHeight; y_coord += file_height + margin) { 
-        image(images[image_index], x_coord, y_coord, file_width, file_height);
+        images[image_index].coordinates(x_coord, y_coord, file_width, file_height);
+        image(images[image_index].imgObj, x_coord, y_coord, file_width, file_height);
         image_index += 1;
     }
   }
@@ -56,16 +75,16 @@ function addImages() {
 function displayImage(position) {
   background(0);
 
-  console.log(images[position]);
+  // console.log(images[position]);
 
   const x = (windowWidth - images[position].width) / 2;
   const y = (windowHeight - images[position].height) / 2;
-  let img = image(images[position], x, y);
+  let img = image(images[position].imgObj, x, y);
 }
 
 function initKinectron() {
   // Define and create an instance of kinectron
-  kinectron = new Kinectron("35.1.106.115");
+  kinectron = new Kinectron("192.168.1.30");
 
   // Connect with server over peer
   kinectron.makeConnection();
@@ -74,22 +93,43 @@ function initKinectron() {
   kinectron.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
 }
 
-function logHandData(hands) {
-  if (hands.rightHandState === 'closed') {
-    /* TODO: 
-     *    - Determine which image is being selected
-     *    - Perhaps set timeout so it is not immediate
-     */
-
-    displayImage(0);
-  }
-}
 
 function drawRightHand(hand) {
-  // background(0);
-  kinectron.getHands(logHandData);
 
-  fill(255);
+  var func = function logHandData(hands) {
 
-  ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 50, 50);
+    if (hands.rightHandState === 'closed') {
+      /* Returns the index of image "clicked on" based on its index in the 
+       * images array (in this example 0-7)
+       *  TODO: 
+       *    - Perhaps set timeout so it is not immediate - unsure
+       */
+       // var t1 = setTimeout(func,, 200); 
+
+        let choosenIndex = -1; 
+        let x_coord = hand.depthX * myCanvas.width;
+        let y_coord = hand.depthY * myCanvas.height; 
+        for (let index = 0; index < images.length; ++index) {
+          if ((images[index].x <= x_coord) && x_coord <= (images[index].x + images[index].w) &&
+              (images[index].y <= y_coord) && y_coord <= (images[index].y + images[index].h)) {
+            choosenIndex = index; 
+            break;
+          }
+        }
+       console.log(choosenIndex);
+        if (choosenIndex != -1) {
+          displayImage(choosenIndex);
+        }
+        
+    }
+  } 
+
+  background(0);
+  addImages();
+
+  kinectron.getHands(func);
+
+  fill(255); 
+  ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
+
 }
