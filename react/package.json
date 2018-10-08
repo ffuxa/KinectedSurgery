@@ -1,0 +1,16 @@
+{
+  "name": "app",
+  "version": "0.1",
+  "scripts": {
+    "client": "cd client && yarn start",
+    "server": "cd server && nodemon api.js",
+    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\""
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "concurrently": "^4.0.1",
+    "express": "^4.16.3",
+    "nodemon": "^1.18.4"
+  },
+  "devDependencies": {}
+}
