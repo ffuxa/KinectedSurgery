@@ -29,7 +29,7 @@ function preload() {
   let i = 0;
   for (; i < 8; ++i) {
     let img = new Img(loadImage('images/danny.jpg'));
-    images.push(img); 
+    images.push(img);  
   }
 }
 
@@ -73,18 +73,15 @@ function addImages() {
 }
 
 function displayImage(position) {
-  background(0);
-
-  // console.log(images[position]);
-
-  const x = (windowWidth - images[position].width) / 2;
-  const y = (windowHeight - images[position].height) / 2;
-  let img = image(images[position].imgObj, x, y);
+  const x = (windowWidth - images[position].w) / 2;
+  const y = (windowHeight - images[position].h) / 2;
+  image(images[position].imgObj, x, y);
+  console.log(images[position]);
 }
 
 function initKinectron() {
   // Define and create an instance of kinectron
-  kinectron = new Kinectron("10.236.171.126");
+  kinectron = new Kinectron("35.3.29.170");
 
   // Connect with server over peer
   kinectron.makeConnection();
@@ -94,9 +91,15 @@ function initKinectron() {
 }
 
 
+
+
+var curIndex = -1; 
+
 function drawRightHand(hand) {
 
   var func = function logHandData(hands) {
+
+    // console.log(hands.rightHandState); 
 
     if (hands.rightHandState === 'closed') {
       /* Returns the index of image "clicked on" based on its index in the 
@@ -106,28 +109,39 @@ function drawRightHand(hand) {
        */
        // var t1 = setTimeout(func,, 200); 
 
-        let choosenIndex = -1; 
-        let x_coord = hand.depthX * myCanvas.width;
-        let y_coord = hand.depthY * myCanvas.height; 
-        for (let index = 0; index < images.length; ++index) {
-          if ((images[index].x <= x_coord) && x_coord <= (images[index].x + images[index].w) &&
-              (images[index].y <= y_coord) && y_coord <= (images[index].y + images[index].h)) {
-            choosenIndex = index; 
-            break;
-          }
+      let choosenIndex = -1;
+      let x_coord = hand.depthX * myCanvas.width;
+      let y_coord = hand.depthY * myCanvas.height; 
+
+      //  console.log(x_coord + ", " + y_coord); 
+
+      for (let index = 0; index < images.length; ++index) {
+        if ((images[index].x <= x_coord) && x_coord <= (images[index].x + images[index].w) &&
+            (images[index].y <= y_coord) && y_coord <= (images[index].y + images[index].h)) {
+          choosenIndex = index; 
+          break;
         }
-       console.log(choosenIndex);
-        if (choosenIndex != -1) {
-          displayImage(choosenIndex);
-        }
-        
+      }
+      console.log(choosenIndex);
+      // if (choosenIndex != -1) {
+      //   displayImage(choosenIndex);
+      // }
+      curIndex = choosenIndex; 
     }
   } 
 
   background(0);
-  addImages();
+  //console.log(curIndex); 
+  // addImages();
 
   kinectron.getHands(func);
+  if (curIndex == -1) {
+    addImages();
+  } else {
+    displayImage(curIndex);
+  }
+
+
 
   fill(255); 
   ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
