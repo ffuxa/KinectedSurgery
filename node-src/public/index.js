@@ -109,7 +109,7 @@ function drawRightHand(hand) {
        */
        // var t1 = setTimeout(func,, 200); 
 
-      let choosenIndex = -1;
+      let chosenIndex = -1;
       let x_coord = hand.depthX * myCanvas.width;
       let y_coord = hand.depthY * myCanvas.height; 
 
@@ -118,15 +118,19 @@ function drawRightHand(hand) {
       for (let index = 0; index < images.length; ++index) {
         if ((images[index].x <= x_coord) && x_coord <= (images[index].x + images[index].w) &&
             (images[index].y <= y_coord) && y_coord <= (images[index].y + images[index].h)) {
-          choosenIndex = index; 
+          chosenIndex = index; 
           break;
         }
       }
-      console.log(choosenIndex);
-      // if (choosenIndex != -1) {
-      //   displayImage(choosenIndex);
+      console.log(chosenIndex);
+      // if (chosenIndex != -1) {
+      //   displayImage(chosenIndex);
       // }
-      curIndex = choosenIndex; 
+      if (curIndex >= 0) {
+        curIndex = chosenIndex; 
+      }
+    } else if (hands.rightHandState === 'lasso') {
+      curIndex = -1;
     }
   } 
 
