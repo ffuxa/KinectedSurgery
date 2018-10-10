@@ -12,7 +12,8 @@ EECS495 Senior Project
 
 # Features
 
-The home window displays 8 images. A cursor on screen will help guide the hand movement. 
-Close hand while hovering on an image to select it and open it.
-Once an image is opened, lift your left hand and close it to zoom in.
-Use right hand lasso gesture to go back to the home page.
+* The home window displays 8 images. 
+* A cursor on screen will help guide the hand movement. 
+* Close hand in a fist while hovering on an image to select it and open it.
+* Once an image is opened, lift your left hand and close it in a fist to zoom in.
+* Use right hand lasso gesture to go back to the home page.
