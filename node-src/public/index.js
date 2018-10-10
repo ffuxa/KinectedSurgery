@@ -33,7 +33,7 @@ function preload() {
   // }
   let img = new Img(loadImage('images/danny.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/danny_confused.jpg'));
+  img = new Img(loadImage('images/lefthand.jpg'));
   images.push(img);  
   img = new Img(loadImage('images/danny_guy.jpg'));
   images.push(img);  
@@ -45,7 +45,7 @@ function preload() {
   images.push(img);  
   img = new Img(loadImage('images/danny_orange.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/danny_thumbs.jpg'));
+  img = new Img(loadImage('images/righthand.jpg'));
   images.push(img);  
 }
 
@@ -138,7 +138,9 @@ function drawRightHand(hand) {
         }
       }
       console.log(chosenIndex);
-      if (chosenIndex >= 0) {
+      if (chosenIndex == -1 || chosenIndex == 1 || chosenIndex == 7) {
+        chosenIndex = -1; 
+      } else {
         curIndex = chosenIndex; 
       }
     } else if (hands.rightHandState === 'lasso') {
