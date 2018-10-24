@@ -18,7 +18,7 @@ class App extends Component {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ path: '/Users/e/Pictures/X-T1/Seattle 2018'})
+      body: JSON.stringify({ path: '/Users/Fabian/Pictures/'})
     });
     const body = await response.json();
     if (response.status !== 200) throw Error(body.message);

@@ -81,7 +81,7 @@ function displayImage(position) {
 
 function initKinectron() {
   // Define and create an instance of kinectron
-  kinectron = new Kinectron("35.3.29.170");
+  kinectron = new Kinectron("10.236.171.126");
 
   // Connect with server over peer
   kinectron.makeConnection();

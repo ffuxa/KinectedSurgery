@@ -27,10 +27,26 @@ function Img(imgObj) {
 // This function runs before any other one
 function preload() {
   let i = 0;
-  for (; i < 8; ++i) {
-    let img = new Img(loadImage('images/danny.jpg'));
-    images.push(img);  
-  }
+  // for (; i < 8; ++i) {
+  //   let img = new Img(loadImage('images/danny.jpg'));
+  //   images.push(img);  
+  // }
+  let img = new Img(loadImage('images/danny.jpg'));
+  images.push(img);  
+  img = new Img(loadImage('images/lefthand.jpg'));
+  images.push(img);  
+  img = new Img(loadImage('images/danny_guy.jpg'));
+  images.push(img);  
+  img = new Img(loadImage('images/danny_laugh.jpg'));
+  images.push(img);  
+  img = new Img(loadImage('images/danny_mm.jpg'));
+  images.push(img);  
+  img = new Img(loadImage('images/danny_old.jpg'));
+  images.push(img);  
+  img = new Img(loadImage('images/danny_orange.jpg'));
+  images.push(img);  
+  img = new Img(loadImage('images/righthand.jpg'));
+  images.push(img);  
 }
 
 function setup() {
@@ -72,16 +88,16 @@ function addImages() {
   }
 }
 
-function displayImage(position) {
-  const x = (windowWidth - images[position].w) / 2;
-  const y = (windowHeight - images[position].h) / 2;
-  image(images[position].imgObj, x, y);
-  console.log(images[position]);
+function displayImage(position, zoom) {
+  const x = (windowWidth - images[position].w * zoom) / 2;
+  const y = (windowHeight - images[position].h * zoom) / 2;
+  image(images[position].imgObj, x, y, images[position].w * zoom, images[position].h * zoom);
+  // console.log(images[position]);
 }
 
 function initKinectron() {
   // Define and create an instance of kinectron
-  kinectron = new Kinectron("35.3.29.170");
+  kinectron = new Kinectron("35.2.11.55");
 
   // Connect with server over peer
   kinectron.makeConnection();
@@ -94,12 +110,13 @@ function initKinectron() {
 
 
 var curIndex = -1; 
+var zoom = 1; 
 
 function drawRightHand(hand) {
 
   var func = function logHandData(hands) {
 
-    // console.log(hands.rightHandState); 
+    console.log(hands.rightHandState); 
 
     if (hands.rightHandState === 'closed') {
       /* Returns the index of image "clicked on" based on its index in the 
@@ -109,36 +126,43 @@ function drawRightHand(hand) {
        */
        // var t1 = setTimeout(func,, 200); 
 
-      let choosenIndex = -1;
+      let chosenIndex = -1;
       let x_coord = hand.depthX * myCanvas.width;
       let y_coord = hand.depthY * myCanvas.height; 
-
-      //  console.log(x_coord + ", " + y_coord); 
 
       for (let index = 0; index < images.length; ++index) {
         if ((images[index].x <= x_coord) && x_coord <= (images[index].x + images[index].w) &&
             (images[index].y <= y_coord) && y_coord <= (images[index].y + images[index].h)) {
-          choosenIndex = index; 
+          chosenIndex = index; 
           break;
         }
       }
-      console.log(choosenIndex);
-      // if (choosenIndex != -1) {
-      //   displayImage(choosenIndex);
-      // }
-      curIndex = choosenIndex; 
+      console.log(chosenIndex);
+      if (chosenIndex == -1 || chosenIndex == 1 || chosenIndex == 7) {
+        chosenIndex = -1; 
+      } else {
+        curIndex = chosenIndex; 
+      }
+    } else if (hands.rightHandState === 'lasso') {
+      curIndex = -1;
+    }
+
+    if (hands.leftHandState === 'closed') {
+      zoom = 2; 
+    } else if (hands.leftHandState === 'lasso') {
+      zoom = 3; 
+    } else {
+      zoom = 1; 
     }
   } 
 
   background(0);
-  //console.log(curIndex); 
-  // addImages();
 
   kinectron.getHands(func);
   if (curIndex == -1) {
     addImages();
   } else {
-    displayImage(curIndex);
+    displayImage(curIndex, zoom);
   }
 
 

@@ -1,6 +1,10 @@
 {
   "name": "app",
+<<<<<<< HEAD
   "version": "0.1",
+=======
+  "version": "0.0.1",
+>>>>>>> b530f8baf7296944dbafeb3cdde8d4ec5a97f102
   "scripts": {
     "client": "cd client && yarn start",
     "server": "cd server && nodemon api.js",
