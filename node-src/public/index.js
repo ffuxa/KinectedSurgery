@@ -31,21 +31,21 @@ function preload() {
   //   let img = new Img(loadImage('images/danny.jpg'));
   //   images.push(img);  
   // }
-  let img = new Img(loadImage('images/danny.jpg'));
+  let img = new Img(loadImage('../public/images/danny.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/lefthand.jpg'));
+  img = new Img(loadImage('../public/images/lefthand.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/danny_guy.jpg'));
+  img = new Img(loadImage('../public/images/danny_guy.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/danny_laugh.jpg'));
+  img = new Img(loadImage('../public/images/danny_laugh.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/danny_mm.jpg'));
+  img = new Img(loadImage('../public/images/danny_mm.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/danny_old.jpg'));
+  img = new Img(loadImage('../public/images/danny_old.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/danny_orange.jpg'));
+  img = new Img(loadImage('../public/images/danny_orange.jpg'));
   images.push(img);  
-  img = new Img(loadImage('images/righthand.jpg'));
+  img = new Img(loadImage('../public/images/righthand.jpg'));
   images.push(img);  
 }
 
