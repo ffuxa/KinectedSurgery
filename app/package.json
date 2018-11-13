@@ -1,0 +1,17 @@
+{
+  "name": "kinected-surgery",
+  "version": "0.1.0",
+  "scripts": {
+    "client": "cd client && node app.js",
+    "server": "cd file_system_server && nodemon file_system_server.js",
+    "start": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\""
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "concurrently": "^4.0.1",
+    "cors": "^2.8.5",
+    "express": "^4.16.3",
+    "nodemon": "^1.18.4"
+  },
+  "devDependencies": {}
+}

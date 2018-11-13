@@ -7,7 +7,7 @@ const img_regex = new RegExp('.jpg|.png', 'i')
 
 app.use(express.json())
 
-app.post('/api', (req, res) => {
+app.post('/fetch_files', (req, res) => {
   var files = fs.readdirSync(req.body.path)
   files = files.filter(file => img_regex.test(file))
   res.send({ files: files });
