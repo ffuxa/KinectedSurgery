@@ -46,7 +46,7 @@ async function fetchFiles(dir_path) {
  * P5.js function (see documentation)
  * Runs before any other function  
  */
-async function preload() {
+// async function preload() {
   // TODO: Update this to not be hardcoded
 //   const dir_path = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/third-try/client/src/sample_files/";
 //   let files = await fetchFiles(dir_path);
@@ -61,17 +61,18 @@ async function preload() {
 //   myCanvas = createCanvas(windowWidth, windowHeight);
 //   background(0);
 //   addImages();
-}
+// }
 
 async function setup() {
-  const dir_path = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/third-try/client/src/sample_files/";
+  const dir_path = "/Users/e/Pictures/";
   let files = await fetchFiles(dir_path);
   files = files["files"];
 
   let i, img;
   for (i = 0; i < files.length; ++i) {
-    img = new Img(loadImage('sample_files/' + files[i]));
-    images.push(img);
+    img = createImg('http://localhost:5000/static/' + files[i]);
+    img.hide();
+    images.push(new Img(img));
   }
 
   // Create a p5 canvas
@@ -106,16 +107,25 @@ function addImages() {
 
     for (y_coord = margin; y_coord < window.innerHeight; y_coord += file_height + margin) { 
         images[image_index].coordinates(x_coord, y_coord, file_width, file_height);
-        image(images[image_index].imgObj, x_coord, y_coord, file_width, file_height);
+        // image(images[image_index].imgObj, x_coord, y_coord, file_width, file_height);
+        images[image_index].imgObj.position(x_coord, y_coord);
+        images[image_index].imgObj.size(file_width, file_height);
+        images[image_index].imgObj.show();
         image_index += 1;
     }
   }
 }
 
 function displayImage(position, zoom) {
+  images.forEach(function(img) {
+    img.hide();
+  });
   const x = (windowWidth - images[position].w * zoom) / 2;
   const y = (windowHeight - images[position].h * zoom) / 2;
-  image(images[position].imgObj, x, y, images[position].w * zoom, images[position].h * zoom);
+  // image(images[position].imgObj, x, y, images[position].w * zoom, images[position].h * zoom);
+  images[image_index].imgObj.position(x, y);
+  images[image_index].imgObj.size(images[position].w * zoom, images[position].h * zoom);
+  images.show();
 }
 
 function initKinectron() {
