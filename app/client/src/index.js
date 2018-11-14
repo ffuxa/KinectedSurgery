@@ -19,6 +19,10 @@ let right_tutorial_img;
 // Used for tracking swipe motion
 let swipeBuf = [];
 
+// The different views for the application
+let ScreenMode = Object.freeze({ "FolderView": 1, "FileView": 2 });
+let currentScreen = ScreenMode.FolderView;
+
 // img Object - stores the image p5 object,
 // its coordinates, width, and height
 function Img(imgObj) {
@@ -107,6 +111,7 @@ function nextPage() {
 }
 
 function addImages() {
+  clearImages();
   const margin = 40;
 
   // This guarantees that exactly 8 images fit in screen (2 rows, 4 columns)
@@ -115,46 +120,54 @@ function addImages() {
 
   let x_coord;
   let image_index = 0;
+  let i = 0;
 
   images_to_display = images.slice(current_page * 6, current_page * 6 + 7);
-  // console.log(images_to_display);
+  console.log(images_to_display);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
     let y_coord;
 
     for (y_coord = margin; y_coord < window.innerHeight; y_coord += file_height + margin) {
-        if (image_index == 1) {
+        if (i == 1) {
           showImage(left_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
         }
-        else if (image_index == 7) {
+        else if (i == 7) {
           showImage(right_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
         }
         else if (image_index < images_to_display.length) {
           images_to_display[image_index].coordinates(x_coord, y_coord, file_width, file_height);
           showImage(images_to_display[image_index].imgObj, x_coord, y_coord, file_width, file_height);
+          image_index += 1;
         }
 
-        image_index += 1;
+        ++i;
     }
   }
 }
 
-function displayImage(position, zoom) {
+function displayImageFullScreen(position, zoom) {
+  clearImages();
+
+  const x = (windowWidth - images[position].w * zoom) / 2;
+  const y = (windowHeight - images[position].h * zoom) / 2;
+
+  showImage(images[position].imgObj, x, y, images[position].w * zoom, images[position].h * zoom);
+}
+
+function clearImages() {
   images.forEach(function(img) {
     img.imgObj.hide();
   });
-  const x = (windowWidth - images[position].w * zoom) / 2;
-  const y = (windowHeight - images[position].h * zoom) / 2;
-  // image(images[position].imgObj, x, y, images[position].w * zoom, images[position].h * zoom);
-  images[position].imgObj.position(x, y);
-  images[position].imgObj.size(images[position].w * zoom, images[position].h * zoom);
-  images[position].imgObj.show();
+
+  left_tutorial_img.imgObj.hide();
+  right_tutorial_img.imgObj.hide();
 }
 
 function initKinectron() {
   // Define and create an instance of kinectron
-  kinectron = new Kinectron("35.1.72.242");
+  kinectron = new Kinectron("35.3.80.244");
 
   // Connect with server over peer
   kinectron.makeConnection();
@@ -179,7 +192,7 @@ function imageIndexAtHandCoords(x_coord, y_coord) {
 
 function drawRightHand(hand) {
   var func = function logHandData(hands) {
-    if (hands.rightHandState === 'closed') {
+    if (hands.rightHandState === 'closed' && currentScreen == ScreenMode.FolderView) {
       /* Returns the index of image "clicked on" based on its index in the 
        * images array (in this example 0-7)
        *  TODO: 
@@ -202,14 +215,15 @@ function drawRightHand(hand) {
     else if (hands.rightHandState === 'lasso') {
       curIndex = -1;
     }
-    else {
+    else if (currentScreen == ScreenMode.FolderView) {
       let index = imageIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
 
       if (index !== -1) {
-        // TODO: Add a "border" around the image I am over;
-        // noFill();
-        // fill('red');
-        // rect(images[index].x, images[index].y, images[index].w, images[index].h);
+        // Display border around image which the cursor is on top of
+        stroke(135, 206, 250); // sets light-blue border around rect
+        strokeWeight(6);
+        noFill();
+        rect(images_to_display[index].x - 9, images_to_display[index].y - 9, images_to_display[index].w, images_to_display[index].h);
       }
     }
 
@@ -229,8 +243,10 @@ function drawRightHand(hand) {
   kinectron.getHands(func);
   if (curIndex == -1) {
     addImages();
+    currentScreen = ScreenMode.FolderView;
   } else {
-    displayImage(curIndex, zoom);
+    displayImageFullScreen(curIndex, zoom);
+    currentScreen = ScreenMode.FileView;
   }
 
   fill(255); 
