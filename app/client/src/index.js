@@ -106,8 +106,10 @@ function showImage(imgObj, x, y, w, h) {
 }
 
 function nextPage() {
-  current_page = current_page + 1;
-  addImages();
+  if ((current_page + 1) * 6 <= images.length) {
+    current_page = current_page + 1;
+    addImages();
+  }
 }
 
 function addImages() {
@@ -123,7 +125,6 @@ function addImages() {
   let i = 0;
 
   images_to_display = images.slice(current_page * 6, current_page * 6 + 7);
-  console.log(images_to_display);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
