@@ -16,6 +16,9 @@ let left_tutorial_img;
 // Right hand tutorial image
 let right_tutorial_img;
 
+// Used for tracking swipe motion
+let swipeBuf = [];
+
 // img Object - stores the image p5 object,
 // its coordinates, width, and height
 function Img(imgObj) {
@@ -64,10 +67,11 @@ function preload() {
 }
 
 async function setup() {
-  // const dir_path = "C:\\Users\\User\\Documents\\KinectedSurgery\\app\\client\\src\\sample_files";
-  const dir_path = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files";
-  let files = await fetchFiles(dir_path);
-  files = files["files"];
+  // const dir_path = "/Users/e/Pictures/";
+  const dir_path = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
+  let res = await fetchFiles(dir_path);
+  files = res["files"].filter(file => !file.is_dir).map(x => x.path);
+  folders = res["files"].filter(file => file.is_dir).map(x => x.path);
 
   let i, img;
   for (i = 0; i < files.length; ++i) {
@@ -98,7 +102,7 @@ function showImage(imgObj, x, y, w, h) {
 }
 
 function nextPage() {
-  current_page += 1;
+  current_page = current_page + 1;
   addImages();
 }
 
@@ -113,6 +117,7 @@ function addImages() {
   let image_index = 0;
 
   images_to_display = images.slice(current_page * 6, current_page * 6 + 7);
+  // console.log(images_to_display);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
@@ -126,8 +131,8 @@ function addImages() {
           showImage(right_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
         }
         else if (image_index < images_to_display.length) {
-          images[image_index].coordinates(x_coord, y_coord, file_width, file_height);
-          showImage(images[image_index].imgObj, x_coord, y_coord, file_width, file_height);
+          images_to_display[image_index].coordinates(x_coord, y_coord, file_width, file_height);
+          showImage(images_to_display[image_index].imgObj, x_coord, y_coord, file_width, file_height);
         }
 
         image_index += 1;
@@ -173,7 +178,6 @@ function imageIndexAtHandCoords(x_coord, y_coord) {
 }
 
 function drawRightHand(hand) {
-  console.log(hand);
   var func = function logHandData(hands) {
     if (hands.rightHandState === 'closed') {
       /* Returns the index of image "clicked on" based on its index in the 
@@ -199,7 +203,6 @@ function drawRightHand(hand) {
       curIndex = -1;
     }
     else {
-      console.log("here!");
       let index = imageIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
 
       if (index !== -1) {
@@ -232,4 +235,14 @@ function drawRightHand(hand) {
 
   fill(255); 
   ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
+
+  swipeBuf.push(hand.depthX);
+  if (swipeBuf.length > 40) {
+    swipeBuf.shift();
+  }  
+  if (Math.max(...swipeBuf) - hand.depthX > 0.5) {
+    console.log('swipe right');
+    nextPage();
+    swipeBuf = [];
+  }
 }
