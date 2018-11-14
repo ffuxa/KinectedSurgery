@@ -42,29 +42,9 @@ async function fetchFiles(dir_path) {
   return body;
 };
 
-/*
- * P5.js function (see documentation)
- * Runs before any other function  
- */
-// async function preload() {
-  // TODO: Update this to not be hardcoded
-//   const dir_path = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/third-try/client/src/sample_files/";
-//   let files = await fetchFiles(dir_path);
-//   files = files["files"];
-
-//   let i, img;
-//   for (i = 0; i < files.length; ++i) {
-//     img = new Img(loadImage('sample_files/' + files[i]));
-//     images.push(img);
-//   }
-
-//   myCanvas = createCanvas(windowWidth, windowHeight);
-//   background(0);
-//   addImages();
-// }
-
 async function setup() {
-  const dir_path = "/Users/e/Pictures/";
+  // const dir_path = "C:\\Users\\User\\Documents\\KinectedSurgery\\app\\client\\src\\sample_files";
+  const dir_path = "C:\\Users\\User\\Documents\\KinectedSurgery\\old-src\\public\\images";
   let files = await fetchFiles(dir_path);
   files = files["files"];
 
@@ -77,19 +57,21 @@ async function setup() {
 
   // Create a p5 canvas
   myCanvas = createCanvas(windowWidth, windowHeight);
+  myCanvas.style('z-index', 100);
+  myCanvas.style('position', 'fixed');
   
   // Set background color
-  background(0);
+  background(0, 0, 0, 0);
 
   // Add images
   addImages();
 
   // Initialize Kinectron
-//   initKinectron();
+  initKinectron();
+
 }
 
 function addImages() {
-  fill('rgb(135, 206, 250)');   // light blue
 
   const margin = 40;
 
@@ -99,7 +81,6 @@ function addImages() {
 
   let x_coord;
   let image_index = 0;
-  console.log(images);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
@@ -118,19 +99,19 @@ function addImages() {
 
 function displayImage(position, zoom) {
   images.forEach(function(img) {
-    img.hide();
+    img.imgObj.hide();
   });
   const x = (windowWidth - images[position].w * zoom) / 2;
   const y = (windowHeight - images[position].h * zoom) / 2;
   // image(images[position].imgObj, x, y, images[position].w * zoom, images[position].h * zoom);
-  images[image_index].imgObj.position(x, y);
-  images[image_index].imgObj.size(images[position].w * zoom, images[position].h * zoom);
-  images.show();
+  images[position].imgObj.position(x, y);
+  images[position].imgObj.size(images[position].w * zoom, images[position].h * zoom);
+  images[position].imgObj.show();
 }
 
 function initKinectron() {
   // Define and create an instance of kinectron
-  kinectron = new Kinectron("35.2.11.55");
+  kinectron = new Kinectron("35.1.72.242");
 
   // Connect with server over peer
   kinectron.makeConnection();
@@ -182,7 +163,7 @@ function drawRightHand(hand) {
     }
   } 
 
-  background(0);
+  clear(); 
 
   kinectron.getHands(func);
   if (curIndex == -1) {
