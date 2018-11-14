@@ -45,7 +45,8 @@ async function fetchFiles(dir_path) {
 };
 
 async function setup() {
-  const dir_path = "/Users/e/Pictures/";
+  // const dir_path = "/Users/e/Pictures/";
+  const dir_path = "C:\\Users\\User\\Documents\\KinectedSurgery\\app\\client\\src\\sample_files\\"; 
   let res = await fetchFiles(dir_path);
   files = res["files"].filter(file => !file.is_dir).map(x => x.path);
   folders = res["files"].filter(file => file.is_dir).map(x => x.path);
@@ -178,10 +179,11 @@ function drawRightHand(hand) {
   ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
 
   swipeBuf.push(hand.depthX);
-  if (swipeBuf.length > 20) {
+  if (swipeBuf.length > 40) {
     swipeBuf.shift();
-  }
-  if (hand.depthX - swipeBuf.min() > 0.5) {
-    console.log('swipe');
+  }  
+  if (Math.max(...swipeBuf) - hand.depthX > 0.5) {
+    console.log('swipe right');
+    swipeBuf = [];
   }
 }
