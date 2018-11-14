@@ -7,20 +7,29 @@ let kinectron = null;
 // Store all images in array
 let images = [];
 
+// Current page being displayed
+let current_page = 0;
+
+// Left hand tutorial image
+let left_tutorial_img;
+
+// Right hand tutorial image
+let right_tutorial_img;
+
 // img Object - stores the image p5 object,
 // its coordinates, width, and height
 function Img(imgObj) {
   this.imgObj = imgObj;
-  this.x = 0; 
-  this.y = 0; 
+  this.x = 0;
+  this.y = 0;
   this.w = 0;
   this.h = 0;
 
   this.coordinates = function(x, y, width, height) {
-    this.x = x; 
-    this.y = y; 
+    this.x = x;
+    this.y = y;
     this.w = width;
-    this.h = height; 
+    this.h = height;
   }
 }
 
@@ -42,9 +51,21 @@ async function fetchFiles(dir_path) {
   return body;
 };
 
+function preload() {
+  // Left hand tutorial image
+  left = createImg('images/lefthand.jpg');
+  left.hide();
+  left_tutorial_img = new Img(left);
+
+  // Right hand tutorial image
+  right = createImg('images/righthand.jpg');
+  right.hide();
+  right_tutorial_img = new Img(right);
+}
+
 async function setup() {
   // const dir_path = "C:\\Users\\User\\Documents\\KinectedSurgery\\app\\client\\src\\sample_files";
-  const dir_path = "C:\\Users\\User\\Documents\\KinectedSurgery\\old-src\\public\\images";
+  const dir_path = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files";
   let files = await fetchFiles(dir_path);
   files = files["files"];
 
@@ -68,11 +89,20 @@ async function setup() {
 
   // Initialize Kinectron
   initKinectron();
+}
 
+function showImage(imgObj, x, y, w, h) {
+  imgObj.position(x, y);
+  imgObj.size(w, h);
+  imgObj.show();
+}
+
+function nextPage() {
+  current_page += 1;
+  addImages();
 }
 
 function addImages() {
-
   const margin = 40;
 
   // This guarantees that exactly 8 images fit in screen (2 rows, 4 columns)
@@ -82,16 +112,24 @@ function addImages() {
   let x_coord;
   let image_index = 0;
 
+  images_to_display = images.slice(current_page * 6, current_page * 6 + 7);
+
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
     let y_coord;
 
-    for (y_coord = margin; y_coord < window.innerHeight; y_coord += file_height + margin) { 
-        images[image_index].coordinates(x_coord, y_coord, file_width, file_height);
-        // image(images[image_index].imgObj, x_coord, y_coord, file_width, file_height);
-        images[image_index].imgObj.position(x_coord, y_coord);
-        images[image_index].imgObj.size(file_width, file_height);
-        images[image_index].imgObj.show();
+    for (y_coord = margin; y_coord < window.innerHeight; y_coord += file_height + margin) {
+        if (image_index == 1) {
+          showImage(left_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
+        }
+        else if (image_index == 7) {
+          showImage(right_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
+        }
+        else if (image_index < images_to_display.length) {
+          images[image_index].coordinates(x_coord, y_coord, file_width, file_height);
+          showImage(images[image_index].imgObj, x_coord, y_coord, file_width, file_height);
+        }
+
         image_index += 1;
     }
   }
@@ -121,9 +159,21 @@ function initKinectron() {
 }
 
 var curIndex = -1; 
-var zoom = 1; 
+var zoom = 1;
+
+function imageIndexAtHandCoords(x_coord, y_coord) {
+  for (let index = 0; index < images.length; ++index) {
+    if ((images[index].x <= x_coord) && x_coord <= (images[index].x + images[index].w) &&
+        (images[index].y <= y_coord) && y_coord <= (images[index].y + images[index].h)) {
+      return index; 
+    }
+  }
+
+  return -1;
+}
 
 function drawRightHand(hand) {
+  console.log(hand);
   var func = function logHandData(hands) {
     if (hands.rightHandState === 'closed') {
       /* Returns the index of image "clicked on" based on its index in the 
@@ -137,28 +187,36 @@ function drawRightHand(hand) {
       let x_coord = hand.depthX * myCanvas.width;
       let y_coord = hand.depthY * myCanvas.height; 
 
-      for (let index = 0; index < images.length; ++index) {
-        if ((images[index].x <= x_coord) && x_coord <= (images[index].x + images[index].w) &&
-            (images[index].y <= y_coord) && y_coord <= (images[index].y + images[index].h)) {
-          chosenIndex = index; 
-          break;
-        }
-      }
+      chosenIndex = imageIndexAtHandCoords(x_coord, y_coord);
 
       if (chosenIndex == -1 || chosenIndex == 1 || chosenIndex == 7) {
         chosenIndex = -1; 
       } else {
         curIndex = chosenIndex; 
       }
-    } else if (hands.rightHandState === 'lasso') {
+    } 
+    else if (hands.rightHandState === 'lasso') {
       curIndex = -1;
+    }
+    else {
+      console.log("here!");
+      let index = imageIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
+
+      if (index !== -1) {
+        // TODO: Add a "border" around the image I am over;
+        // noFill();
+        // fill('red');
+        // rect(images[index].x, images[index].y, images[index].w, images[index].h);
+      }
     }
 
     if (hands.leftHandState === 'closed') {
       zoom = 2; 
-    } else if (hands.leftHandState === 'lasso') {
+    } 
+    else if (hands.leftHandState === 'lasso') {
       zoom = 3; 
-    } else {
+    } 
+    else {
       zoom = 1; 
     }
   } 
@@ -174,5 +232,4 @@ function drawRightHand(hand) {
 
   fill(255); 
   ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
-
 }
