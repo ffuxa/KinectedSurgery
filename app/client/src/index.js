@@ -43,10 +43,10 @@ async function fetchFiles(dir_path) {
 };
 
 async function setup() {
-  // const dir_path = "C:\\Users\\User\\Documents\\KinectedSurgery\\app\\client\\src\\sample_files";
-  const dir_path = "C:\\Users\\User\\Documents\\KinectedSurgery\\old-src\\public\\images";
-  let files = await fetchFiles(dir_path);
-  files = files["files"];
+  const dir_path = "/Users/e/Pictures/";
+  let res = await fetchFiles(dir_path);
+  files = res["files"].filter(file => !file.is_dir).map(x => x.path);
+  folders = res["files"].filter(file => file.is_dir).map(x => x.path);
 
   let i, img;
   for (i = 0; i < files.length; ++i) {
