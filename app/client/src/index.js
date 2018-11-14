@@ -7,6 +7,8 @@ let kinectron = null;
 // Store all images in array
 let images = [];
 
+let swipeBuf = [];
+
 // img Object - stores the image p5 object,
 // its coordinates, width, and height
 function Img(imgObj) {
@@ -175,4 +177,11 @@ function drawRightHand(hand) {
   fill(255); 
   ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
 
+  swipeBuf.push(hand.depthX);
+  if (swipeBuf.length > 20) {
+    swipeBuf.shift();
+  }
+  if (hand.depthX - swipeBuf.min() > 0.5) {
+    console.log('swipe');
+  }
 }
