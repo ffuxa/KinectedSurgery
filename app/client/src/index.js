@@ -23,6 +23,17 @@ let swipeBuf = [];
 let ScreenMode = Object.freeze({ "FolderView": 1, "FileView": 2 });
 let currentScreen = ScreenMode.FolderView;
 
+// The different supported file types. Might change in future versions
+let FileType = Object.freeze({ "Image": 1, "Folder": 2 });
+
+// File object
+function File(icon, name, path, type) {
+  this.name = name;
+  this.path = path;
+  this.icon = icon;
+  this.type = type;
+}
+
 // img Object - stores the image p5 object,
 // its coordinates, width, and height
 function Img(imgObj) {
