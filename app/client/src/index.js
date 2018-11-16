@@ -4,8 +4,8 @@ let myCanvas = null;
 // Declare kinectron 
 let kinectron = null;
 
-// Store all images in array
-let images = [];
+// Store all files in array
+let files = [];
 
 // Current page being displayed
 let current_page = 0;
@@ -16,8 +16,14 @@ let left_tutorial_img;
 // Right hand tutorial image
 let right_tutorial_img;
 
+// Folder icon for FolderView
+let folder_img;
+
 // Used for tracking swipe motion
 let swipeBuf = [];
+
+// Current directory (starts off as root). TODO: Unhardcode!!!!!!
+let current_dir = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
 
 // The different views for the application
 let ScreenMode = Object.freeze({ "FolderView": 1, "FileView": 2 });
@@ -27,11 +33,10 @@ let currentScreen = ScreenMode.FolderView;
 let FileType = Object.freeze({ "Image": 1, "Folder": 2 });
 
 // File object
-function File(icon, name, path, type) {
-  this.name = name;
-  this.path = path;
-  this.icon = icon;
-  this.type = type;
+function File(name, icon, type) {
+  this.name = name; // type: string
+  this.icon = icon; // type: Img
+  this.type = type; // type: FileType
 }
 
 // img Object - stores the image p5 object,
@@ -69,32 +74,59 @@ async function fetchFiles(dir_path) {
   return body;
 };
 
+async function fetchAndUpdateCanvas(dir_path) {
+  let res = await fetchFiles(dir_path);
+  server_files = res["files"];
+  clearFileIcons();
+  files = []; // Empty array
+  current_page = 0;
+  current_dir = dir_path;
+
+  for (let i = 0; i < server_files.length; ++i) {
+    const path = 'http://localhost:5000/static/' + server_files[i].path;
+
+    if (server_files[i].is_dir) {
+      files.push(new File(server_files[i].path, folder_img, FileType.Folder));
+    }
+    else {
+      // NOTE: This assumes all non-directory elements are images. 
+      //  This is going to change if we add support to other file types,
+      //  like PDFs and video
+      const img = createImg(path);
+      img.hide();
+      const icon = new Img(img); 
+      files.push(new File(server_files[i].path, icon, FileType.Folder));
+    }
+  }
+
+  // Add files
+  addFileIconsToCanvas();
+}
+
+/*
+ * This P5.js function runs before setup
+ */
 function preload() {
   // Left hand tutorial image
-  left = createImg('images/lefthand.jpg');
+  let left = createImg('images/lefthand.jpg');
   left.hide();
   left_tutorial_img = new Img(left);
 
   // Right hand tutorial image
-  right = createImg('images/righthand.jpg');
+  let right = createImg('images/righthand.jpg');
   right.hide();
   right_tutorial_img = new Img(right);
+
+  // Folder Icon
+  let folder = createImg('images/folder-icon.png');
+  folder.hide();
+  folder_img = new Img(folder);
 }
 
+/*
+ * First function to run after calling preload
+ */
 async function setup() {
-  // const dir_path = "/Users/e/Pictures/";
-  const dir_path = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
-  let res = await fetchFiles(dir_path);
-  files = res["files"].filter(file => !file.is_dir).map(x => x.path);
-  folders = res["files"].filter(file => file.is_dir).map(x => x.path);
-
-  let i, img;
-  for (i = 0; i < files.length; ++i) {
-    img = createImg('http://localhost:5000/static/' + files[i]);
-    img.hide();
-    images.push(new Img(img));
-  }
-
   // Create a p5 canvas
   myCanvas = createCanvas(windowWidth, windowHeight);
   myCanvas.style('z-index', 100);
@@ -103,39 +135,46 @@ async function setup() {
   // Set background color
   background(0, 0, 0, 0);
 
-  // Add images
-  addImages();
+  // Fetch files and display icons
+  await fetchAndUpdateCanvas(current_dir);
 
   // Initialize Kinectron
   initKinectron();
 }
 
-function showImage(imgObj, x, y, w, h) {
+function showFile(imgObj, x, y, w, h) {
   imgObj.position(x, y);
   imgObj.size(w, h);
   imgObj.show();
 }
 
 function nextPage() {
-  if ((current_page + 1) * 6 <= images.length) {
+  if ((current_page + 1) * 6 <= files.length) {
     current_page = current_page + 1;
-    addImages();
+    addFileIconsToCanvas();
+  }
+  else {
+    // TODO: display some sort of error message to user!!!
   }
 }
 
-function addImages() {
-  clearImages();
+function addFileIconsToCanvas() {
+  clearFileIcons();
   const margin = 40;
 
-  // This guarantees that exactly 8 images fit in screen (2 rows, 4 columns)
+  // This guarantees that exactly 8 icons fit in screen (2 rows, 4 columns)
   const file_width = (window.innerWidth - (margin * 5)) / 4;
   const file_height = (window.innerHeight - (margin * 3)) / 2;
 
   let x_coord;
-  let image_index = 0;
+  let file_index = 0;
   let i = 0;
 
-  images_to_display = images.slice(current_page * 6, current_page * 6 + 7);
+  files_to_display = files.slice(current_page * 6, current_page * 6 + 7);
+  
+  fill('white');
+  textFont('Helvetica');
+  text(current_dir, 10, 10);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
@@ -143,15 +182,22 @@ function addImages() {
 
     for (y_coord = margin; y_coord < window.innerHeight; y_coord += file_height + margin) {
         if (i == 1) {
-          showImage(left_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
+          showFile(left_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
         }
         else if (i == 7) {
-          showImage(right_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
+          showFile(right_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
         }
-        else if (image_index < images_to_display.length) {
-          images_to_display[image_index].coordinates(x_coord, y_coord, file_width, file_height);
-          showImage(images_to_display[image_index].imgObj, x_coord, y_coord, file_width, file_height);
-          image_index += 1;
+        else if (file_index < files_to_display.length) {
+          // Show icon
+          files_to_display[file_index].icon.coordinates(x_coord, y_coord, file_width, file_height);
+          showFile(files_to_display[file_index].icon.imgObj, x_coord, y_coord, file_width, file_height);
+
+          // Show filename
+          fill('white');
+          textFont('Helvetica');
+          text(files_to_display[file_index].name, x_coord + 95, y_coord + file_height + 15);
+
+          file_index += 1;
         }
 
         ++i;
@@ -159,18 +205,20 @@ function addImages() {
   }
 }
 
-function displayImageFullScreen(position, zoom) {
-  clearImages();
+function displayFileFullScreen(position, zoom) {
+  clearFileIcons();
 
-  const x = (windowWidth - images[position].w * zoom) / 2;
-  const y = (windowHeight - images[position].h * zoom) / 2;
+  const x = (windowWidth - files[position].icon.w * zoom) / 2;
+  const y = (windowHeight - files[position].icon.h * zoom) / 2;
 
-  showImage(images[position].imgObj, x, y, images[position].w * zoom, images[position].h * zoom);
+  showFile(files[position].icon.imgObj, x, y, files[position].icon.w * zoom, files[position].icon.h * zoom);
 }
 
-function clearImages() {
-  images.forEach(function(img) {
-    img.imgObj.hide();
+function clearFileIcons() {
+  clear(); // Clears text and other canvas elements
+
+  files.forEach(function(file) {
+    file.icon.imgObj.hide();
   });
 
   left_tutorial_img.imgObj.hide();
@@ -191,10 +239,10 @@ function initKinectron() {
 var curIndex = -1; 
 var zoom = 1;
 
-function imageIndexAtHandCoords(x_coord, y_coord) {
-  for (let index = 0; index < images.length; ++index) {
-    if ((images[index].x <= x_coord) && x_coord <= (images[index].x + images[index].w) &&
-        (images[index].y <= y_coord) && y_coord <= (images[index].y + images[index].h)) {
+function fileIndexAtHandCoords(x_coord, y_coord) {
+  for (let index = 0; index < files.length; ++index) {
+    if ((files[index].icon.x <= x_coord) && x_coord <= (files[index].icon.x + files[index].icon.w) &&
+        (files[index].icon.y <= y_coord) && y_coord <= (files[index].icon.y + files[index].icon.h)) {
       return index; 
     }
   }
@@ -204,9 +252,9 @@ function imageIndexAtHandCoords(x_coord, y_coord) {
 
 function drawRightHand(hand) {
   var func = function logHandData(hands) {
-    if (hands.rightHandState === 'closed' && currentScreen == ScreenMode.FolderView) {
-      /* Returns the index of image "clicked on" based on its index in the 
-       * images array (in this example 0-7)
+    if (hands.rightHandState === 'closed' && currentScreen === ScreenMode.FolderView) {
+      /* Returns the index of file "clicked on" based on its index in the 
+       * files array (in this example 0-7)
        *  TODO: 
        *    - Perhaps set timeout so it is not immediate - unsure
        */
@@ -216,7 +264,7 @@ function drawRightHand(hand) {
       let x_coord = hand.depthX * myCanvas.width;
       let y_coord = hand.depthY * myCanvas.height; 
 
-      chosenIndex = imageIndexAtHandCoords(x_coord, y_coord);
+      chosenIndex = fileIndexAtHandCoords(x_coord, y_coord);
 
       if (chosenIndex == -1 || chosenIndex == 1 || chosenIndex == 7) {
         chosenIndex = -1; 
@@ -228,14 +276,14 @@ function drawRightHand(hand) {
       curIndex = -1;
     }
     else if (currentScreen == ScreenMode.FolderView) {
-      let index = imageIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
+      let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
 
       if (index !== -1) {
-        // Display border around image which the cursor is on top of
+        // Display border around file which the cursor is on top of
         stroke(135, 206, 250); // sets light-blue border around rect
         strokeWeight(6);
         noFill();
-        rect(images_to_display[index].x - 9, images_to_display[index].y - 9, images_to_display[index].w, images_to_display[index].h);
+        rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 9, files_to_display[index].icon.w, files_to_display[index].icon.h);
       }
     }
 
@@ -254,10 +302,14 @@ function drawRightHand(hand) {
 
   kinectron.getHands(func);
   if (curIndex == -1) {
-    addImages();
+    addFileIconsToCanvas();
     currentScreen = ScreenMode.FolderView;
-  } else {
-    displayImageFullScreen(curIndex, zoom);
+  } 
+  else if (files[curIndex].type === FileType.Folder) {
+    fetchAndUpdateCanvas(current_dir + files[curIndex].name + '/');
+  }
+  else {
+    displayFileFullScreen(curIndex, zoom);
     currentScreen = ScreenMode.FileView;
   }
 
