@@ -133,7 +133,7 @@ async function setup() {
   myCanvas.style('position', 'fixed');
   
   // Set background color
-  background(0, 0, 0, 0);
+  background(255, 255, 255, 0);
 
   // Fetch files and display icons
   await fetchAndUpdateCanvas(current_dir);
@@ -143,6 +143,7 @@ async function setup() {
 }
 
 function showFile(imgObj, x, y, w, h) {
+  imgObj.style('border-radius', '10px');
   imgObj.position(x, y);
   imgObj.size(w, h);
   imgObj.show();
@@ -171,7 +172,7 @@ function goToParentDir() {
 
 function addFileIconsToCanvas() {
   clearFileIcons();
-  const margin = 40;
+  const margin = 80;
 
   // This guarantees that exactly 8 icons fit in screen (2 rows, 4 columns)
   const file_width = (window.innerWidth - (margin * 5)) / 4;
@@ -181,6 +182,7 @@ function addFileIconsToCanvas() {
   let file_index = 0;
   let i = 0;
 
+  // This grabs 6 images at a time
   files_to_display = files.slice(current_page * 6, current_page * 6 + 7);
   
   fill('white');
@@ -206,7 +208,10 @@ function addFileIconsToCanvas() {
           // Show filename
           fill('white');
           textFont('Helvetica');
-          text(files_to_display[file_index].name, x_coord + 95, y_coord + file_height + 15);
+          text(files_to_display[file_index].name, x_coord + 65, y_coord + file_height + 15);
+
+          fill('black');
+          rect(x_coord + 65, y_coord + file_height + 15);
 
           file_index += 1;
         }
