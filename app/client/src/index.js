@@ -158,6 +158,17 @@ function nextPage() {
   }
 }
 
+function goToParentDir() {
+  if (current_dir === "/") {
+    // TODO: display some sort of error message to user!!!
+  }
+  else {
+    let path = current_dir.slice(0, -1) // Remove the last '/' char
+    path = path.substring(0, path.lastIndexOf('/')) + '/'; // Remove current dir name
+    fetchAndUpdateCanvas(path);
+  }
+}
+
 function addFileIconsToCanvas() {
   clearFileIcons();
   const margin = 40;
@@ -252,53 +263,62 @@ function fileIndexAtHandCoords(x_coord, y_coord) {
 
 function drawRightHand(hand) {
   var func = function logHandData(hands) {
-    if (hands.rightHandState === 'closed' && currentScreen === ScreenMode.FolderView) {
-      /* Returns the index of file "clicked on" based on its index in the 
-       * files array (in this example 0-7)
-       *  TODO: 
-       *    - Perhaps set timeout so it is not immediate - unsure
-       */
-       // var t1 = setTimeout(func,, 200); 
+    if (currentScreen === ScreenMode.FolderView) {
+      if (hands.rightHandState === 'closed') {
+        /* Returns the index of file "clicked on" based on its index in the 
+        * files array (in this example 0-7)
+        *  TODO: 
+        *    - Perhaps set timeout so it is not immediate - unsure
+        */
+        // var t1 = setTimeout(func,, 200); 
 
-      let chosenIndex = -1;
-      let x_coord = hand.depthX * myCanvas.width;
-      let y_coord = hand.depthY * myCanvas.height; 
+        let chosenIndex = -1;
+        let x_coord = hand.depthX * myCanvas.width;
+        let y_coord = hand.depthY * myCanvas.height; 
 
-      chosenIndex = fileIndexAtHandCoords(x_coord, y_coord);
+        chosenIndex = fileIndexAtHandCoords(x_coord, y_coord);
 
-      if (chosenIndex == -1 || chosenIndex == 1 || chosenIndex == 7) {
-        chosenIndex = -1; 
-      } else {
-        curIndex = chosenIndex; 
+        if (chosenIndex == -1 || chosenIndex == 1 || chosenIndex == 7) {
+          chosenIndex = -1; 
+        } else {
+          curIndex = chosenIndex; 
+        }
+      } 
+      else if (hands.rightHandState === 'lasso') {
+        goToParentDir();
       }
-    } 
-    else if (hands.rightHandState === 'lasso') {
-      curIndex = -1;
-    }
-    else if (currentScreen == ScreenMode.FolderView) {
-      let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
+      else {
+        let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
 
-      if (index !== -1) {
-        // Display border around file which the cursor is on top of
-        stroke(135, 206, 250); // sets light-blue border around rect
-        strokeWeight(6);
-        noFill();
-        rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 9, files_to_display[index].icon.w, files_to_display[index].icon.h);
+        if (index !== -1) {
+          // Display border around file which the cursor is on top of
+          stroke(135, 206, 250); // sets light-blue border around rect
+          strokeWeight(6);
+          noFill();
+          rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 9, files_to_display[index].icon.w, files_to_display[index].icon.h);
+        }
       }
     }
-
-    if (hands.leftHandState === 'closed') {
-      zoom = 2; 
-    } 
-    else if (hands.leftHandState === 'lasso') {
-      zoom = 3; 
-    } 
+    // If in FileView
     else {
-      zoom = 1; 
-    }
-  } 
+      if (hands.rightHandState === 'lasso') {
+        // This goes back to FolderView
+        curIndex = -1;
+      }
 
-  clear(); 
+      if (hands.leftHandState === 'closed') {
+        zoom = 2; 
+      } 
+      else if (hands.leftHandState === 'lasso') {
+        zoom = 3; 
+      }
+      else {
+        zoom = 1; 
+      }
+    }
+  }
+
+  clear();
 
   kinectron.getHands(func);
   if (curIndex == -1) {
@@ -313,7 +333,7 @@ function drawRightHand(hand) {
     currentScreen = ScreenMode.FileView;
   }
 
-  fill(255); 
+  fill(255);
   ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
 
   swipeBuf.push(hand.depthX);
