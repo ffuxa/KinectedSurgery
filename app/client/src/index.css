@@ -1,0 +1,44 @@
+body {
+    background-color: rgb(67, 95, 114);   
+}
+
+#dir_input {
+    width: 90%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: rgb(67, 95, 114);
+    border: none;
+    color: white;
+}
+
+#dir_input:focus {
+    color: black;
+    background-color: rgb(205, 219, 230);
+}
+
+/*
+#update {
+    background-color: rgb(113, 206, 230);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    padding: 10px 15px;
+    text-decoration: none;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+*/
+
+#notice {
+    font-size: 12px;
+    color: white;
+    display: none;
+}
+
+#dir_input:focus + #notice {
+    display: inline;
+}

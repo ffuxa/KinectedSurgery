@@ -61,6 +61,11 @@ function Img(imgObj) {
  *  returns a list of the filenames (NOT full path) in the given directory  
  */
 async function fetchFiles(dir_path) {
+  // Makes sure path ends with a backslash
+  if (dir_path[dir_path.length - 1] !== '/') {
+    dir_path += '/';
+  }
+
   const response = await fetch('http://localhost:5000/fetch_files', {
     method: 'POST',
     headers: {
@@ -69,8 +74,12 @@ async function fetchFiles(dir_path) {
     body: JSON.stringify({ path: dir_path })
   });
 
+  if (response.status !== 200) {
+    displayError("Error: Not a valid path!");
+    throw Error(response.message);
+  }
+
   const body = await response.json();
-  if (response.status !== 200) throw Error(body.message);
   return body;
 };
 
@@ -81,6 +90,7 @@ async function fetchAndUpdateCanvas(dir_path) {
   files = []; // Empty array
   current_page = 0;
   current_dir = dir_path;
+  document.getElementById("dir_input").value = current_dir;
 
   for (let i = 0; i < server_files.length; ++i) {
     const path = 'http://localhost:5000/static/' + server_files[i].path;
@@ -135,11 +145,18 @@ async function setup() {
   // Set background color
   background(255, 255, 255, 0);
 
-  // Fetch files and display icons
-  await fetchAndUpdateCanvas(current_dir);
-
   // Initialize Kinectron
   initKinectron();
+
+  // Helper function used for entering custom directory using keyboard
+  listenForEnter();
+
+  // Prompt user for directory
+  fill('white');
+  textFont('Helvetica');
+  textSize(42);
+  textAlign(CENTER);
+  text("Enter starting directory above", windowWidth/2, windowHeight/2 - 45);
 }
 
 function showFile(imgObj, x, y, w, h) {
@@ -155,13 +172,13 @@ function nextPage() {
     addFileIconsToCanvas();
   }
   else {
-    // TODO: display some sort of error message to user!!!
+    displayError("Error: No more files to show!");
   }
 }
 
 function goToParentDir() {
   if (current_dir === "/") {
-    // TODO: display some sort of error message to user!!!
+    displayError("Error: Parent directory doesn't exist!");
   }
   else {
     let path = current_dir.slice(0, -1) // Remove the last '/' char
@@ -184,10 +201,6 @@ function addFileIconsToCanvas() {
 
   // This grabs 6 images at a time
   files_to_display = files.slice(current_page * 6, current_page * 6 + 7);
-  
-  fill('white');
-  textFont('Helvetica');
-  text(current_dir, 10, 10);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
@@ -207,11 +220,14 @@ function addFileIconsToCanvas() {
 
           // Show filename
           fill('white');
+          textSize(12);
           textFont('Helvetica');
-          text(files_to_display[file_index].name, x_coord + 65, y_coord + file_height + 15);
+          textAlign(LEFT);
+          text(files_to_display[file_index].name, x_coord + 65, y_coord + file_height - 40);
 
-          fill('black');
-          rect(x_coord + 65, y_coord + file_height + 15);
+          // TODO: Add box or something to make filenames look better? Dunno
+          // fill('black');
+          // rect(x_coord + 65, y_coord + file_height - 40);
 
           file_index += 1;
         }
@@ -300,7 +316,7 @@ function drawRightHand(hand) {
           stroke(135, 206, 250); // sets light-blue border around rect
           strokeWeight(6);
           noFill();
-          rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 9, files_to_display[index].icon.w, files_to_display[index].icon.h);
+          rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 59, files_to_display[index].icon.w, files_to_display[index].icon.h);
         }
       }
     }
@@ -350,4 +366,30 @@ function drawRightHand(hand) {
     nextPage();
     swipeBuf = [];
   }
+}
+
+function displayError(errorMsg) {
+  fill('red');
+  textFont('Helvetica');
+  textSize(32);
+  textAlign(CENTER);
+  let t = text(errorMsg, windowWidth/2, windowHeight/2 - 45);
+
+  setTimeout(() => {
+    // t.removse();
+    clear();
+    addFileIconsToCanvas();
+  }, 2000);
+}
+
+function listenForEnter() {
+  document.getElementById("dir_input").addEventListener("keyup", function(event) {
+    // Cancel the default action, if needed
+    event.preventDefault();
+    // Number 13 is the "Enter" key on the keyboard
+    if (event.keyCode === 13) {
+      // Trigger
+      fetchAndUpdateCanvas(document.getElementById('dir_input').value);
+    }
+  });
 }
