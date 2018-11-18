@@ -1,6 +1,8 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
+let ip_kinectron = "192.168.1.56"; 
+
 // Declare kinectron 
 let kinectron = null;
 
@@ -23,7 +25,9 @@ let folder_img;
 let swipeBuf = [];
 
 // Current directory (starts off as root). TODO: Unhardcode!!!!!!
-let current_dir = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
+// let current_dir = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
+let current_dir = "/Users/User/Documents/KinectedSurgery/app/client/src/sample_files/";
+
 
 // The different views for the application
 let ScreenMode = Object.freeze({ "FolderView": 1, "FileView": 2 });
@@ -105,7 +109,7 @@ async function fetchAndUpdateCanvas(dir_path) {
       const img = createImg(path);
       img.hide();
       const icon = new Img(img); 
-      files.push(new File(server_files[i].path, icon, FileType.Folder));
+      files.push(new File(server_files[i].path, icon, FileType.Image));
     }
   }
 
@@ -259,7 +263,7 @@ function clearFileIcons() {
 
 function initKinectron() {
   // Define and create an instance of kinectron
-  kinectron = new Kinectron("35.3.80.244");
+  kinectron = new Kinectron(ip_kinectron);
 
   // Connect with server over peer
   kinectron.makeConnection();
