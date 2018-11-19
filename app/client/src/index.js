@@ -329,8 +329,8 @@ function drawRightHand(hand) {
       rightStateBuf.shift();
     }
 
-    if (currentScreen === ScreenMode.FolderView) {
-      if (ABLE_STATE != "disabled" && rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
+    if (ABLE_STATE != "disabled" && currentScreen === ScreenMode.FolderView) {
+      if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
         let chosenIndex = -1;
         let x_coord = hand.depthX * myCanvas.width;
         let y_coord = hand.depthY * myCanvas.height; 
@@ -344,30 +344,7 @@ function drawRightHand(hand) {
         }
       } 
       else if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
-        if(ABLE_STATE == "enabled") {
-          document.getElementById("disable").style.display = "block";
-          document.getElementById("enable").style.display = "none";
-          console.log("enabled->buffer");
-          ABLE_STATE = "buffer";
-          background(255,0,0);
-          // GLOBAL_KINECTRON.stopAll();
-          setTimeout(function () {
-            console.log("buffer->disabled");
-            ABLE_STATE = "disabled";
-          }, 2000);
-        }
-        else if(ABLE_STATE == "disabled") {
-          document.getElementById("disable").style.display = "none";
-          document.getElementById("enable").style.display = "block";
-          console.log("disabled->buffer");
-          ABLE_STATE = "buffer";
-          background(0,255,0);
-          // GLOBAL_KINECTRON.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
-          setTimeout(function () {
-            console.log("buffer->enabled");
-            ABLE_STATE = "enabled";
-          }, 2000);
-        }
+        //nothing
       }
       else {
         let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
@@ -382,7 +359,7 @@ function drawRightHand(hand) {
       }
     }
     // If in FileView
-    else {
+    else if(ABLE_STATE != "disabled") {
       if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
         // This goes back to FolderView
         curIndex = -1;
@@ -445,6 +422,30 @@ function drawRightHand(hand) {
     console.log('swipe up');
     goToParentDir();
     ySwipeBuf = [];
+  }
+  if (hand.depthY - Math.min(...ySwipeBuf) > 0.5) {
+    if(ABLE_STATE == "enabled") {
+      document.getElementById("disable").style.display = "block";
+      document.getElementById("enable").style.display = "none";
+      console.log("enabled->buffer");
+      ABLE_STATE = "buffer";
+      // GLOBAL_KINECTRON.stopAll();
+      setTimeout(function () {
+        console.log("buffer->disabled");
+        ABLE_STATE = "disabled";
+      }, 2000);
+    }
+    else if(ABLE_STATE == "disabled") {
+      document.getElementById("disable").style.display = "none";
+      document.getElementById("enable").style.display = "block";
+      console.log("disabled->buffer");
+      ABLE_STATE = "buffer";
+      // GLOBAL_KINECTRON.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
+      setTimeout(function () {
+        console.log("buffer->enabled");
+        ABLE_STATE = "enabled";
+      }, 2000);
+    }
   }
 }
 
