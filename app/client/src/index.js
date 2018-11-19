@@ -22,7 +22,8 @@ let right_tutorial_img;
 let folder_img;
 
 // Used for tracking swipe motion
-let swipeBuf = [];
+let xSwipeBuf = [];
+let ySwipeBuf = [];
 
 // Used for jitter removal
 let leftStateBuf = [];
@@ -322,12 +323,6 @@ function drawRightHand(hand) {
 
     if (currentScreen === ScreenMode.FolderView) {
       if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
-        /* Returns the index of file "clicked on" based on its index in the 
-        * files array (in this example 0-7)
-        *  TODO: 
-        *    - Perhaps set timeout so it is not immediate - unsure
-        */
-        // var t1 = setTimeout(func,, 200); 
 
         let chosenIndex = -1;
         let x_coord = hand.depthX * myCanvas.width;
@@ -393,19 +388,33 @@ function drawRightHand(hand) {
   fill(255);
   ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
 
-  swipeBuf.push(hand.depthX);
-  if (swipeBuf.length > 15) {
-    swipeBuf.shift();
+  xSwipeBuf.push(hand.depthX);
+  if (xSwipeBuf.length > 6) {
+    xSwipeBuf.shift();
   }  
-  if (Math.max(...swipeBuf) - hand.depthX > 0.4) {
+  if (Math.max(...xSwipeBuf) - hand.depthX > 0.35) {
     console.log('swipe right');
-    nextPage();
-    swipeBuf = [];
+    if (currentScreen === ScreenMode.FolderView) {
+      nextPage();
+    }
+    xSwipeBuf = [];
   }
-  if (hand.depthX - Math.min(...swipeBuf) > 0.4) {
+  if (hand.depthX - Math.min(...xSwipeBuf) > 0.35) {
     console.log('swipe left');
-    prevPage();
-    swipeBuf = [];
+    if (currentScreen === ScreenMode.FolderView) {
+      prevPage();
+    }
+    xSwipeBuf = [];
+  }
+
+  ySwipeBuf.push(hand.depthY);
+  if (ySwipeBuf.length > 6) {
+    ySwipeBuf.shift();
+  }  
+  if (Math.max(...ySwipeBuf) - hand.depthY > 0.5) {
+    console.log('swipe up');
+    goToParentDir();
+    ySwipeBuf = [];
   }
 }
 
