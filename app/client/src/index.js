@@ -32,13 +32,15 @@ let rightStateBuf = [];
 // let current_dir = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
 let current_dir = "/Users/User/Documents/KinectedSurgery/app/client/src/sample_files/";
 
-
 // The different views for the application
 let ScreenMode = Object.freeze({ "FolderView": 1, "FileView": 2 });
 let currentScreen = ScreenMode.FolderView;
 
 // The different supported file types. Might change in future versions
 let FileType = Object.freeze({ "Image": 1, "Folder": 2 });
+
+// Loading variable
+let loading = false;
 
 // File object
 function File(name, icon, type) {
@@ -92,6 +94,7 @@ async function fetchFiles(dir_path) {
 };
 
 async function fetchAndUpdateCanvas(dir_path) {
+  clear();
   let res = await fetchFiles(dir_path);
   server_files = res["files"];
   clearFileIcons();
@@ -238,6 +241,7 @@ function addFileIconsToCanvas() {
 
           // Show filename
           fill('white');
+          // strokeWeight(0);
           textSize(12);
           textFont('Helvetica');
           textAlign(LEFT);
@@ -258,15 +262,13 @@ function addFileIconsToCanvas() {
 function displayFileFullScreen(position, zoom) {
   clearFileIcons();
 
-  const x = (windowWidth - files[position].icon.w * zoom) / 2;
-  const y = (windowHeight - files[position].icon.h * zoom) / 2;
+  const x = (windowWidth - files_to_display[position].icon.w * zoom) / 2;
+  const y = (windowHeight - files_to_display[position].icon.h * zoom) / 2;
 
-  showFile(files[position].icon.imgObj, x, y, files[position].icon.w * zoom, files[position].icon.h * zoom);
+  showFile(files_to_display[position].icon.imgObj, x, y, files_to_display[position].icon.w * zoom, files_to_display[position].icon.h * zoom);
 }
 
 function clearFileIcons() {
-  clear(); // Clears text and other canvas elements
-
   files.forEach(function(file) {
     file.icon.imgObj.hide();
   });
@@ -320,57 +322,60 @@ function drawRightHand(hand) {
       rightStateBuf.shift();
     }
 
-    if (currentScreen === ScreenMode.FolderView) {
-      if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
-        /* Returns the index of file "clicked on" based on its index in the 
-        * files array (in this example 0-7)
-        *  TODO: 
-        *    - Perhaps set timeout so it is not immediate - unsure
-        */
-        // var t1 = setTimeout(func,, 200); 
+    if (!loading) {
+      if (currentScreen === ScreenMode.FolderView) {
+        if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
+          /* Returns the index of file "clicked on" based on its index in the 
+          * files array (in this example 0-7)
+          *  TODO: 
+          *    - Perhaps set timeout so it is not immediate - unsure
+          */
+          // var t1 = setTimeout(func,, 200); 
 
-        let chosenIndex = -1;
-        let x_coord = hand.depthX * myCanvas.width;
-        let y_coord = hand.depthY * myCanvas.height; 
+          let chosenIndex = -1;
+          let x_coord = hand.depthX * myCanvas.width;
+          let y_coord = hand.depthY * myCanvas.height; 
 
-        chosenIndex = fileIndexAtHandCoords(x_coord, y_coord);
+          chosenIndex = fileIndexAtHandCoords(x_coord, y_coord);
+          console.log("chosenIndex: ", chosenIndex);
 
-        if (chosenIndex == -1 || chosenIndex == 1 || chosenIndex == 7) {
-          chosenIndex = -1; 
-        } else {
-          curIndex = chosenIndex; 
+          if (chosenIndex == -1) {
+            chosenIndex = -1; 
+          } else {
+            curIndex = chosenIndex; 
+          }
+        } 
+        else if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
+          // goToParentDir();
         }
-      } 
-      else if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
-        // goToParentDir();
+        else {
+          let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
+
+          if (index !== -1) {
+            // Display border around file which the cursor is on top of
+            stroke(135, 206, 250); // sets light-blue border around rect
+            strokeWeight(6);
+            noFill();
+            rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 59, files_to_display[index].icon.w, files_to_display[index].icon.h);
+          }
+        }
       }
+      // If in FileView
       else {
-        let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
-
-        if (index !== -1) {
-          // Display border around file which the cursor is on top of
-          stroke(135, 206, 250); // sets light-blue border around rect
-          strokeWeight(6);
-          noFill();
-          rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 59, files_to_display[index].icon.w, files_to_display[index].icon.h);
+        if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
+          // This goes back to FolderView
+          curIndex = -1;
         }
-      }
-    }
-    // If in FileView
-    else {
-      if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
-        // This goes back to FolderView
-        curIndex = -1;
-      }
 
-      if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'closed') {
-        zoom = 2; 
-      } 
-      else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'lasso') {
-        zoom = 3; 
-      }
-      else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'open') {
-        zoom = 1; 
+        if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'closed') {
+          zoom = 2; 
+        } 
+        else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'lasso') {
+          zoom = 3; 
+        }
+        else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'open') {
+          zoom = 1; 
+        }
       }
     }
   }
@@ -378,12 +383,20 @@ function drawRightHand(hand) {
   clear();
 
   kinectron.getHands(func);
-  if (curIndex == -1) {
+
+  if (curIndex === -1) {
     addFileIconsToCanvas();
     currentScreen = ScreenMode.FolderView;
-  } 
-  else if (files[curIndex].type === FileType.Folder) {
-    fetchAndUpdateCanvas(current_dir + files[curIndex].name + '/');
+  }
+  else if (files_to_display[curIndex].type === FileType.Folder) {
+    let newPath = current_dir + files_to_display[curIndex].name + '/';
+    curIndex = -1;
+    loading = true;
+    fetchAndUpdateCanvas(newPath);
+    currentScreen = ScreenMode.FolderView;
+    setTimeout(() => {
+      loading = false;
+    }, 2000);
   }
   else {
     displayFileFullScreen(curIndex, zoom);
@@ -417,8 +430,6 @@ function displayError(errorMsg) {
   let t = text(errorMsg, windowWidth/2, windowHeight/2 - 45);
 
   setTimeout(() => {
-    // t.removse();
-    clear();
     addFileIconsToCanvas();
   }, 2000);
 }
