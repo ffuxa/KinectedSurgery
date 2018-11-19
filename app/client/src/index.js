@@ -29,6 +29,8 @@ let ySwipeBuf = [];
 let leftStateBuf = [];
 let rightStateBuf = [];
 
+let GLOBAL_KINECTRON;
+
 // Current directory (starts off as root). TODO: Unhardcode!!!!!!
 // let current_dir = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
 let current_dir = "/Users/User/Documents/KinectedSurgery/app/client/src/sample_files/";
@@ -280,11 +282,16 @@ function initKinectron() {
   // Define and create an instance of kinectron
   kinectron = new Kinectron(ip_kinectron);
 
+  GLOBAL_KINECTRON = kinectron;
+
   // Connect with server over peer
   kinectron.makeConnection();
 
   // Request all tracked bodies and pass data to your callback
   kinectron.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
+
+  document.getElementById("disable").style.display = "none";
+  document.getElementById("enable").style.display = "block";
 }
 
 var curIndex = -1; 
@@ -301,6 +308,7 @@ function fileIndexAtHandCoords(x_coord, y_coord) {
   return -1;
 }
 
+let ABLE_STATE = "enabled"
 function drawRightHand(hand) {
   var func = function logHandData(hands) {
     const stateBufSize = 3;
@@ -322,8 +330,7 @@ function drawRightHand(hand) {
     }
 
     if (currentScreen === ScreenMode.FolderView) {
-      if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
-
+      if (ABLE_STATE != "disabled" && rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
         let chosenIndex = -1;
         let x_coord = hand.depthX * myCanvas.width;
         let y_coord = hand.depthY * myCanvas.height; 
@@ -337,7 +344,30 @@ function drawRightHand(hand) {
         }
       } 
       else if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
-        // goToParentDir();
+        if(ABLE_STATE == "enabled") {
+          document.getElementById("disable").style.display = "block";
+          document.getElementById("enable").style.display = "none";
+          console.log("enabled->buffer");
+          ABLE_STATE = "buffer";
+          background(255,0,0);
+          // GLOBAL_KINECTRON.stopAll();
+          setTimeout(function () {
+            console.log("buffer->disabled");
+            ABLE_STATE = "disabled";
+          }, 2000);
+        }
+        else if(ABLE_STATE == "disabled") {
+          document.getElementById("disable").style.display = "none";
+          document.getElementById("enable").style.display = "block";
+          console.log("disabled->buffer");
+          ABLE_STATE = "buffer";
+          background(0,255,0);
+          // GLOBAL_KINECTRON.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
+          setTimeout(function () {
+            console.log("buffer->enabled");
+            ABLE_STATE = "enabled";
+          }, 2000);
+        }
       }
       else {
         let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
