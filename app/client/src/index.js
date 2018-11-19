@@ -390,24 +390,25 @@ function drawRightHand(hand) {
   clear();
 
   kinectron.getHands(func);
-
-  if (curIndex === -1) {
-    addFileIconsToCanvas();
-    currentScreen = ScreenMode.FolderView;
-  }
-  else if (files_to_display[curIndex].type === FileType.Folder) {
-    let newPath = current_dir + files_to_display[curIndex].name + '/';
-    curIndex = -1;
-    loading = true;
-    fetchAndUpdateCanvas(newPath);
-    currentScreen = ScreenMode.FolderView;
-    setTimeout(() => {
-      loading = false;
-    }, 2000);
-  }
-  else {
-    displayFileFullScreen(curIndex, zoom);
-    currentScreen = ScreenMode.FileView;
+  if(ABLE_STATE != "disabled") {
+    if (curIndex === -1) {
+      addFileIconsToCanvas();
+      currentScreen = ScreenMode.FolderView;
+    }
+    else if (files_to_display[curIndex].type === FileType.Folder) {
+      let newPath = current_dir + files_to_display[curIndex].name + '/';
+      curIndex = -1;
+      loading = true;
+      fetchAndUpdateCanvas(newPath);
+      currentScreen = ScreenMode.FolderView;
+      setTimeout(() => {
+        loading = false;
+      }, 2000);
+    }
+    else {
+      displayFileFullScreen(curIndex, zoom);
+      currentScreen = ScreenMode.FileView;
+    }
   }
 
   fill(255);
@@ -417,14 +418,14 @@ function drawRightHand(hand) {
   if (xSwipeBuf.length > 6) {
     xSwipeBuf.shift();
   }  
-  if (Math.max(...xSwipeBuf) - hand.depthX > 0.35) {
+  if (ABLE_STATE != "disabled" && Math.max(...xSwipeBuf) - hand.depthX > 0.32) {
     console.log('swipe right');
     if (currentScreen === ScreenMode.FolderView) {
       nextPage();
     }
     xSwipeBuf = [];
   }
-  if (hand.depthX - Math.min(...xSwipeBuf) > 0.35) {
+  if (ABLE_STATE != "disabled" && hand.depthX - Math.min(...xSwipeBuf) > 0.32) {
     console.log('swipe left');
     if (currentScreen === ScreenMode.FolderView) {
       prevPage();
@@ -436,12 +437,14 @@ function drawRightHand(hand) {
   if (ySwipeBuf.length > 6) {
     ySwipeBuf.shift();
   }  
-  if (Math.max(...ySwipeBuf) - hand.depthY > 0.5) {
+  if (ABLE_STATE != "disabled" && Math.max(...ySwipeBuf) - hand.depthY > 0.32) {
     console.log('swipe up');
-    goToParentDir();
+    if (currentScreen === ScreenMode.FolderView) {
+      goToParentDir();
+    }
     ySwipeBuf = [];
   }
-  if (hand.depthY - Math.min(...ySwipeBuf) > 0.5) {
+  if (hand.depthY - Math.min(...ySwipeBuf) > 0.32) {
     if(ABLE_STATE == "enabled") {
       document.getElementById("disable").style.display = "block";
       document.getElementById("enable").style.display = "none";
@@ -451,7 +454,7 @@ function drawRightHand(hand) {
       setTimeout(function () {
         console.log("buffer->disabled");
         ABLE_STATE = "disabled";
-      }, 2000);
+      }, 1000);
     }
     else if(ABLE_STATE == "disabled") {
       document.getElementById("disable").style.display = "none";
@@ -462,20 +465,22 @@ function drawRightHand(hand) {
       setTimeout(function () {
         console.log("buffer->enabled");
         ABLE_STATE = "enabled";
-      }, 2000);
+      }, 1000);
     }
   }
 }
 
 function displayError(errorMsg) {
-  fill('red');
-  textFont('Helvetica');
-  textSize(32);
-  textAlign(CENTER);
-  let t = text(errorMsg, windowWidth/2, windowHeight/2 - 45);
+  // fill('red');
+  // textFont('Helvetica');
+  // textSize(32);
+  // textAlign(CENTER);
+  document.getElementById("errorMsg").innerHTML = errorMsg;
+  // let t = text(errorMsg, windowWidth/2, windowHeight/2 - 45);
 
   setTimeout(() => {
-    addFileIconsToCanvas();
+    // addFileIconsToCanvas();
+    document.getElementById("errorMsg").innerHTML = "";
   }, 2000);
 }
 
