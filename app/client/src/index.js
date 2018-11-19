@@ -1,7 +1,7 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
-let ip_kinectron = "192.168.1.56"; 
+let ip_kinectron = "35.2.80.207"; 
 
 // Declare kinectron 
 let kinectron = null;
@@ -23,6 +23,10 @@ let folder_img;
 
 // Used for tracking swipe motion
 let swipeBuf = [];
+
+// Used for jitter removal
+let leftStateBuf = [];
+let rightStateBuf = [];
 
 // Current directory (starts off as root). TODO: Unhardcode!!!!!!
 // let current_dir = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
@@ -180,6 +184,16 @@ function nextPage() {
   }
 }
 
+function prevPage() {
+  if ((current_page - 1) * 6 >= 0) {
+    current_page = current_page - 1;
+    addFileIconsToCanvas();
+  }
+  else {
+    displayError("Error: No more files to show!");
+  }
+}
+
 function goToParentDir() {
   if (current_dir === "/") {
     displayError("Error: Parent directory doesn't exist!");
@@ -288,8 +302,26 @@ function fileIndexAtHandCoords(x_coord, y_coord) {
 
 function drawRightHand(hand) {
   var func = function logHandData(hands) {
+    const stateBufSize = 3;
+    if (leftStateBuf.length > 0 && leftStateBuf[leftStateBuf.length - 1] != hands.leftHandState) {
+      leftStateBuf = [];
+    } else {
+      leftStateBuf.push(hands.leftHandState);
+    }
+    if (leftStateBuf.length > stateBufSize) {
+      leftStateBuf.shift();
+    }
+    if (rightStateBuf.length > 0 && rightStateBuf[rightStateBuf.length - 1] != hands.rightHandState) {
+      rightStateBuf = [];
+    } else {
+      rightStateBuf.push(hands.rightHandState);
+    }
+    if (rightStateBuf.length > stateBufSize) {
+      rightStateBuf.shift();
+    }
+
     if (currentScreen === ScreenMode.FolderView) {
-      if (hands.rightHandState === 'closed') {
+      if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
         /* Returns the index of file "clicked on" based on its index in the 
         * files array (in this example 0-7)
         *  TODO: 
@@ -309,8 +341,8 @@ function drawRightHand(hand) {
           curIndex = chosenIndex; 
         }
       } 
-      else if (hands.rightHandState === 'lasso') {
-        goToParentDir();
+      else if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
+        // goToParentDir();
       }
       else {
         let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
@@ -326,18 +358,18 @@ function drawRightHand(hand) {
     }
     // If in FileView
     else {
-      if (hands.rightHandState === 'lasso') {
+      if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'lasso') {
         // This goes back to FolderView
         curIndex = -1;
       }
 
-      if (hands.leftHandState === 'closed') {
+      if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'closed') {
         zoom = 2; 
       } 
-      else if (hands.leftHandState === 'lasso') {
+      else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'lasso') {
         zoom = 3; 
       }
-      else {
+      else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'open') {
         zoom = 1; 
       }
     }
@@ -362,12 +394,17 @@ function drawRightHand(hand) {
   ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
 
   swipeBuf.push(hand.depthX);
-  if (swipeBuf.length > 40) {
+  if (swipeBuf.length > 15) {
     swipeBuf.shift();
   }  
-  if (Math.max(...swipeBuf) - hand.depthX > 0.5) {
+  if (Math.max(...swipeBuf) - hand.depthX > 0.4) {
     console.log('swipe right');
     nextPage();
+    swipeBuf = [];
+  }
+  if (hand.depthX - Math.min(...swipeBuf) > 0.4) {
+    console.log('swipe left');
+    prevPage();
     swipeBuf = [];
   }
 }
