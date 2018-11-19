@@ -19,7 +19,7 @@ let left_tutorial_img;
 let right_tutorial_img;
 
 // Folder icon for FolderView
-let folder_img;
+let folder_img_path = 'images/folder-icon.png';
 
 // Used for tracking swipe motion
 let xSwipeBuf = [];
@@ -110,7 +110,10 @@ async function fetchAndUpdateCanvas(dir_path) {
     const path = 'http://localhost:5000/static/' + server_files[i].path;
 
     if (server_files[i].is_dir) {
-      files.push(new File(server_files[i].path, folder_img, FileType.Folder));
+      const img = createImg(folder_img_path);
+      img.hide();
+      const icon = new Img(img); 
+      files.push(new File(server_files[i].path, icon, FileType.Folder));
     }
     else {
       // NOTE: This assumes all non-directory elements are images. 
@@ -140,11 +143,6 @@ function preload() {
   let right = createImg('images/righthand.jpg');
   right.hide();
   right_tutorial_img = new Img(right);
-
-  // Folder Icon
-  let folder = createImg('images/folder-icon.png');
-  folder.hide();
-  folder_img = new Img(folder);
 }
 
 /*
