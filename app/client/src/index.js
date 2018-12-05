@@ -247,10 +247,11 @@ function addFileIconsToCanvas() {
           // Show filename
           fill('white');
           // strokeWeight(0);
-          textSize(12);
+          noStroke(); 
+          textSize(22);
           textFont('Helvetica');
           textAlign(LEFT);
-          text(files_to_display[file_index].name, x_coord + 65, y_coord + file_height - 40);
+          text(files_to_display[file_index].name, x_coord + 62, y_coord + file_height - 40);
 
           // TODO: Add box or something to make filenames look better? Dunno
           // fill('black');
