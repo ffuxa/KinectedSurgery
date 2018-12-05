@@ -1,7 +1,7 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
-let ip_kinectron = "35.3.41.219"; 
+let ip_kinectron = "35.3.41.219";
 
 // Declare kinectron 
 let kinectron = null;
@@ -21,6 +21,10 @@ let right_tutorial_img;
 // Folder icon for FolderView
 let folder_img_path = 'images/folder-icon.png';
 let video_img_path = 'images/video.png'; 
+
+// Used for multi-body tracking
+let trackingId = null;
+let lastTrackedTimes = {};
 
 // Used for tracking swipe motion
 let xSwipeBuf = [];
@@ -230,7 +234,7 @@ function addFileIconsToCanvas() {
   let i = 0;
 
   // This grabs 6 images at a time
-  files_to_display = files.slice(current_page * 6, current_page * 6 + 7);
+  files_to_display = files.slice(current_page * 6, current_page * 6 + 6);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
@@ -251,10 +255,11 @@ function addFileIconsToCanvas() {
           // Show filename
           fill('white');
           // strokeWeight(0);
-          textSize(12);
+          noStroke(); 
+          textSize(22);
           textFont('Helvetica');
           textAlign(LEFT);
-          text(files_to_display[file_index].name, x_coord + 65, y_coord + file_height - 40);
+          text(files_to_display[file_index].name, x_coord + 62, y_coord + file_height - 40);
 
           // TODO: Add box or something to make filenames look better? Dunno
           // fill('black');
@@ -310,8 +315,19 @@ function initKinectron() {
   // Connect with server over peer
   kinectron.makeConnection();
 
+  $('input[name=hand_choice]:radio').on('change', function(event, ui) {
+    console.log($(this).val());
+    if ($(this).val() == 'left') {
+      kinectron.startTrackedJoint(kinectron.HANDLEFT, drawLeftHand);
+    }
+    if ($(this).val() == 'right') {
+      kinectron.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
+    }
+  });
+
   // Request all tracked bodies and pass data to your callback
-  kinectron.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
+  // kinectron.startTrackedJoint(kinectron.HANDLEFT, drawLeftHand);
+  //kinectron.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
 
   document.getElementById("disable").style.display = "none";
   document.getElementById("enable").style.display = "block";
@@ -332,8 +348,31 @@ function fileIndexAtHandCoords(x_coord, y_coord) {
 }
 
 let ABLE_STATE = "enabled"
+
+function drawLeftHand(hand) {
+  drawHand(hand, true);
+}
+
 function drawRightHand(hand) {
+  drawHand(hand);
+}
+
+function drawHand(hand, flip=false) {
+  console.log(document.querySelector('input[name=hand_choice]:checked').value);
+  var current = Date.now();
+  if (trackingId != null && lastTrackedTimes[trackingId] != undefined && current - lastTrackedTimes[trackingId] > 1000) {
+    trackingId = hand.trackingId;
+  }
+  lastTrackedTimes[hand.trackingId] = current;
+  if (trackingId === null) {
+    trackingId = hand.trackingId;
+  } else if (trackingId != hand.trackingId) {
+    return;
+  }
   var func = function logHandData(hands) {
+    if (flip) {
+      hands.leftHandState = [hands.rightHandState, hands.rightHandState = hands.leftHandState][0];
+    }
     const stateBufSize = 3;
     if (leftStateBuf.length > 0 && leftStateBuf[leftStateBuf.length - 1] != hands.leftHandState) {
       leftStateBuf = [];
@@ -355,13 +394,6 @@ function drawRightHand(hand) {
     if (!loading) {
       if (ABLE_STATE != "disabled" && currentScreen === ScreenMode.FolderView) {
         if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
-          /* Returns the index of file "clicked on" based on its index in the 
-          * files array (in this example 0-7)
-          *  TODO: 
-          *    - Perhaps set timeout so it is not immediate - unsure
-          */
-          // var t1 = setTimeout(func,, 200); 
-
           let chosenIndex = -1;
           let x_coord = hand.depthX * myCanvas.width;
           let y_coord = hand.depthY * myCanvas.height; 
@@ -450,15 +482,32 @@ function drawRightHand(hand) {
   }  
   if (ABLE_STATE != "disabled" && Math.max(...xSwipeBuf) - hand.depthX > 0.32) {
     console.log('swipe right');
+    console.log(files_to_display);
     if (currentScreen === ScreenMode.FolderView) {
       nextPage();
+    }
+    else {
+      do {
+        curIndex += 1;
+        curIndex %= files_to_display.length;
+      } while(files_to_display[curIndex].type == ScreenMode.FileView);
+      displayFileFullScreen(curIndex, zoom);
     }
     xSwipeBuf = [];
   }
   if (ABLE_STATE != "disabled" && hand.depthX - Math.min(...xSwipeBuf) > 0.32) {
     console.log('swipe left');
+    console.log(files_to_display)
     if (currentScreen === ScreenMode.FolderView) {
       prevPage();
+    }
+    else {
+      do {
+        curIndex -= 1;
+        if(curIndex == -1) curIndex = files_to_display.length - 1;
+      }
+      while(files_to_display[curIndex].type == ScreenMode.FileView);
+      displayFileFullScreen(curIndex, zoom);
     }
     xSwipeBuf = [];
   }
@@ -480,7 +529,6 @@ function drawRightHand(hand) {
       document.getElementById("enable").style.display = "none";
       console.log("enabled->buffer");
       ABLE_STATE = "buffer";
-      // GLOBAL_KINECTRON.stopAll();
       setTimeout(function () {
         console.log("buffer->disabled");
         ABLE_STATE = "disabled";
@@ -491,7 +539,6 @@ function drawRightHand(hand) {
       document.getElementById("enable").style.display = "block";
       console.log("disabled->buffer");
       ABLE_STATE = "buffer";
-      // GLOBAL_KINECTRON.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
       setTimeout(function () {
         console.log("buffer->enabled");
         ABLE_STATE = "enabled";
