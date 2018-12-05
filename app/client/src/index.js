@@ -21,6 +21,9 @@ let right_tutorial_img;
 // Folder icon for FolderView
 let folder_img_path = 'images/folder-icon.png';
 
+// Used for multi-body tracking
+let trackingId;
+
 // Used for tracking swipe motion
 let xSwipeBuf = [];
 let ySwipeBuf = [];
@@ -310,6 +313,11 @@ function fileIndexAtHandCoords(x_coord, y_coord) {
 
 let ABLE_STATE = "enabled"
 function drawRightHand(hand) {
+  if (trackingId === null) {
+    trackingId = hand.trackingId;
+  } else if (trackingId != hand.trackingId) {
+    return;
+  }
   var func = function logHandData(hands) {
     const stateBufSize = 3;
     if (leftStateBuf.length > 0 && leftStateBuf[leftStateBuf.length - 1] != hands.leftHandState) {
@@ -332,13 +340,6 @@ function drawRightHand(hand) {
     if (!loading) {
       if (ABLE_STATE != "disabled" && currentScreen === ScreenMode.FolderView) {
         if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
-          /* Returns the index of file "clicked on" based on its index in the 
-          * files array (in this example 0-7)
-          *  TODO: 
-          *    - Perhaps set timeout so it is not immediate - unsure
-          */
-          // var t1 = setTimeout(func,, 200); 
-
           let chosenIndex = -1;
           let x_coord = hand.depthX * myCanvas.width;
           let y_coord = hand.depthY * myCanvas.height; 
