@@ -1,7 +1,7 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
-let ip_kinectron = "35.2.80.207"; 
+let ip_kinectron = "35.3.41.219"; 
 
 // Declare kinectron 
 let kinectron = null;
@@ -222,7 +222,7 @@ function addFileIconsToCanvas() {
   let i = 0;
 
   // This grabs 6 images at a time
-  files_to_display = files.slice(current_page * 6, current_page * 6 + 7);
+  files_to_display = files.slice(current_page * 6, current_page * 6 + 6);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
@@ -420,15 +420,32 @@ function drawRightHand(hand) {
   }  
   if (ABLE_STATE != "disabled" && Math.max(...xSwipeBuf) - hand.depthX > 0.32) {
     console.log('swipe right');
+    console.log(files_to_display);
     if (currentScreen === ScreenMode.FolderView) {
       nextPage();
+    }
+    else {
+      do {
+        curIndex += 1;
+        curIndex %= files_to_display.length;
+      } while(files_to_display[curIndex].type == ScreenMode.FileView);
+      displayFileFullScreen(curIndex, zoom);
     }
     xSwipeBuf = [];
   }
   if (ABLE_STATE != "disabled" && hand.depthX - Math.min(...xSwipeBuf) > 0.32) {
     console.log('swipe left');
+    console.log(files_to_display)
     if (currentScreen === ScreenMode.FolderView) {
       prevPage();
+    }
+    else {
+      do {
+        curIndex -= 1;
+        if(curIndex == -1) curIndex = files_to_display.length - 1;
+      }
+      while(files_to_display[curIndex].type == ScreenMode.FileView);
+      displayFileFullScreen(curIndex, zoom);
     }
     xSwipeBuf = [];
   }
@@ -450,7 +467,6 @@ function drawRightHand(hand) {
       document.getElementById("enable").style.display = "none";
       console.log("enabled->buffer");
       ABLE_STATE = "buffer";
-      // GLOBAL_KINECTRON.stopAll();
       setTimeout(function () {
         console.log("buffer->disabled");
         ABLE_STATE = "disabled";
@@ -461,7 +477,6 @@ function drawRightHand(hand) {
       document.getElementById("enable").style.display = "block";
       console.log("disabled->buffer");
       ABLE_STATE = "buffer";
-      // GLOBAL_KINECTRON.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
       setTimeout(function () {
         console.log("buffer->enabled");
         ABLE_STATE = "enabled";
