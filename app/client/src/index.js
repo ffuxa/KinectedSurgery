@@ -1,7 +1,7 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
-let ip_kinectron = "35.1.34.121";
+let ip_kinectron = "35.3.41.219";
 
 // Declare kinectron 
 let kinectron = null;
