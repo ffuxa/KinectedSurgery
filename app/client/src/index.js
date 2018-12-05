@@ -1,7 +1,7 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
-let ip_kinectron = "35.1.34.121"; 
+let ip_kinectron = "35.1.34.121";
 
 // Declare kinectron 
 let kinectron = null;
@@ -291,8 +291,19 @@ function initKinectron() {
   // Connect with server over peer
   kinectron.makeConnection();
 
+  $('input[name=hand_choice]:radio').on('change', function(event, ui) {
+    console.log($(this).val());
+    if ($(this).val() == 'left') {
+      kinectron.startTrackedJoint(kinectron.HANDLEFT, drawLeftHand);
+    }
+    if ($(this).val() == 'right') {
+      kinectron.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
+    }
+  });
+
   // Request all tracked bodies and pass data to your callback
-  kinectron.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
+  // kinectron.startTrackedJoint(kinectron.HANDLEFT, drawLeftHand);
+  //kinectron.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
 
   document.getElementById("disable").style.display = "none";
   document.getElementById("enable").style.display = "block";
@@ -313,7 +324,17 @@ function fileIndexAtHandCoords(x_coord, y_coord) {
 }
 
 let ABLE_STATE = "enabled"
+
+function drawLeftHand(hand) {
+  drawHand(hand, true);
+}
+
 function drawRightHand(hand) {
+  drawHand(hand);
+}
+
+function drawHand(hand, flip=false) {
+  console.log(document.querySelector('input[name=hand_choice]:checked').value);
   var current = Date.now();
   if (trackingId != null && lastTrackedTimes[trackingId] != undefined && current - lastTrackedTimes[trackingId] > 1000) {
     trackingId = hand.trackingId;
@@ -325,6 +346,9 @@ function drawRightHand(hand) {
     return;
   }
   var func = function logHandData(hands) {
+    if (flip) {
+      hands.leftHandState = [hands.rightHandState, hands.rightHandState = hands.leftHandState][0];
+    }
     const stateBufSize = 3;
     if (leftStateBuf.length > 0 && leftStateBuf[leftStateBuf.length - 1] != hands.leftHandState) {
       leftStateBuf = [];
