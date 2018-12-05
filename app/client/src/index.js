@@ -1,7 +1,7 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
-let ip_kinectron = "35.2.80.207"; 
+let ip_kinectron = "35.1.34.121"; 
 
 // Declare kinectron 
 let kinectron = null;
@@ -22,7 +22,8 @@ let right_tutorial_img;
 let folder_img_path = 'images/folder-icon.png';
 
 // Used for multi-body tracking
-let trackingId;
+let trackingId = null;
+let lastTrackedTimes = {};
 
 // Used for tracking swipe motion
 let xSwipeBuf = [];
@@ -313,6 +314,11 @@ function fileIndexAtHandCoords(x_coord, y_coord) {
 
 let ABLE_STATE = "enabled"
 function drawRightHand(hand) {
+  var current = Date.now();
+  if (trackingId != null && lastTrackedTimes[trackingId] != undefined && current - lastTrackedTimes[trackingId] > 1000) {
+    trackingId = hand.trackingId;
+  }
+  lastTrackedTimes[hand.trackingId] = current;
   if (trackingId === null) {
     trackingId = hand.trackingId;
   } else if (trackingId != hand.trackingId) {
