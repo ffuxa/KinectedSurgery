@@ -1,7 +1,7 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
-let ip_kinectron = "35.2.80.207"; 
+let ip_kinectron = "35.3.41.219"; 
 
 // Declare kinectron 
 let kinectron = null;
@@ -20,6 +20,7 @@ let right_tutorial_img;
 
 // Folder icon for FolderView
 let folder_img_path = 'images/folder-icon.png';
+let video_img_path = 'images/video.png'; 
 
 // Used for tracking swipe motion
 let xSwipeBuf = [];
@@ -29,7 +30,8 @@ let ySwipeBuf = [];
 let leftStateBuf = [];
 let rightStateBuf = [];
 
-let GLOBAL_KINECTRON;
+// Used for displaying video
+let videoiFrame = {};
 
 // Current directory (starts off as root). TODO: Unhardcode!!!!!!
 // let current_dir = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
@@ -40,7 +42,7 @@ let ScreenMode = Object.freeze({ "FolderView": 1, "FileView": 2 });
 let currentScreen = ScreenMode.FolderView;
 
 // The different supported file types. Might change in future versions
-let FileType = Object.freeze({ "Image": 1, "Folder": 2 });
+let FileType = Object.freeze({ "Image": 1, "Folder": 2, "Video": 3 });
 
 // Loading variable
 let loading = false;
@@ -115,10 +117,16 @@ async function fetchAndUpdateCanvas(dir_path) {
       const icon = new Img(img); 
       files.push(new File(server_files[i].path, icon, FileType.Folder));
     }
+    else if (path.substr(-4) === '.mp4') {
+      const img = createImg(video_img_path);
+      img.hide();
+      const icon = new Img(img); 
+      files.push(new File(server_files[i].path, icon, FileType.Video));
+    }
+    // NOTE: This assumes all non-directory, non-mp4 elements are images. 
+    //  This is going to change if we add support to other file types,
+    //  like PDFs
     else {
-      // NOTE: This assumes all non-directory elements are images. 
-      //  This is going to change if we add support to other file types,
-      //  like PDFs and video
       const img = createImg(path);
       img.hide();
       const icon = new Img(img); 
@@ -269,7 +277,22 @@ function displayFileFullScreen(position, zoom) {
   showFile(files_to_display[position].icon.imgObj, x, y, files_to_display[position].icon.w * zoom, files_to_display[position].icon.h * zoom);
 }
 
+function displayVideoFullScreen(index) {
+  clearFileIcons();
+
+  videoiFrame = document.createElement("iframe"); 
+  videoiFrame.src = 'http://localhost:5000/static/' + files_to_display[index].name;
+  videoiFrame.align = "right";
+  videoiFrame.height = "500px";
+  videoiFrame.width = "800px";
+  videoiFrame.style = "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 101;";
+  document.getElementById("main-div").appendChild(videoiFrame);
+}
+
 function clearFileIcons() {
+  videoiFrame.src = "";   // this "pauses" the video when its exited out
+  videoiFrame.style = "display: none;";
+
   files.forEach(function(file) {
     file.icon.imgObj.hide();
   });
@@ -390,7 +413,7 @@ function drawRightHand(hand) {
   clear();
 
   kinectron.getHands(func);
-  if(ABLE_STATE != "disabled") {
+  if (ABLE_STATE != "disabled") {
     if (curIndex === -1) {
       addFileIconsToCanvas();
       currentScreen = ScreenMode.FolderView;
@@ -405,14 +428,21 @@ function drawRightHand(hand) {
         loading = false;
       }, 2000);
     }
-    else {
-      displayFileFullScreen(curIndex, zoom);
-      currentScreen = ScreenMode.FileView;
+    else if (currentScreen === ScreenMode.FolderView) {
+      if (files_to_display[curIndex].type === FileType.Video) {
+        displayVideoFullScreen(curIndex);
+        currentScreen = ScreenMode.FileView;
+      }
+      else {
+        displayFileFullScreen(curIndex, zoom);
+        currentScreen = ScreenMode.FileView;
+      }
     }
   }
 
   fill(255);
-  ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
+  e = ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
+  // e.style('z-index', 150);
 
   xSwipeBuf.push(hand.depthX);
   if (xSwipeBuf.length > 6) {
@@ -445,7 +475,7 @@ function drawRightHand(hand) {
     ySwipeBuf = [];
   }
   if (hand.depthY - Math.min(...ySwipeBuf) > 0.32) {
-    if(ABLE_STATE == "enabled") {
+    if (ABLE_STATE == "enabled") {
       document.getElementById("disable").style.display = "block";
       document.getElementById("enable").style.display = "none";
       console.log("enabled->buffer");
