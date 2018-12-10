@@ -1,7 +1,7 @@
 // Create a p5 canvas (learn more at p5js.org)
 let myCanvas = null;
 
-let ip_kinectron = "35.3.41.219";
+let ip_kinectron = "35.2.68.53";
 
 // Declare kinectron 
 let kinectron = null;
@@ -234,9 +234,11 @@ function addFileIconsToCanvas() {
 
     for (y_coord = margin; y_coord < window.innerHeight; y_coord += file_height + margin) {
         if (i == 1) {
+          left_tutorial_img.coordinates(x_coord, y_coord, file_width, file_height);
           showFile(left_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
         }
         else if (i == 7) {
+          right_tutorial_img.coordinates(x_coord, y_coord, file_width, file_height);
           showFile(right_tutorial_img.imgObj, x_coord, y_coord, file_width, file_height);
         }
         else if (file_index < files_to_display.length) {
@@ -268,10 +270,18 @@ function addFileIconsToCanvas() {
 function displayFileFullScreen(position, zoom) {
   clearFileIcons();
 
-  const x = (windowWidth - files_to_display[position].icon.w * zoom) / 2;
-  const y = (windowHeight - files_to_display[position].icon.h * zoom) / 2;
+  let file_to_display;
+  if (position === 6) {
+    file_to_display = left_tutorial_img;
+  } else if (position === 7) {
+    file_to_display = right_tutorial_img;
+  } else {
+    file_to_display = files_to_display[position].icon;
+  }
+  const x = (windowWidth - file_to_display.w * zoom) / 2;
+  const y = (windowHeight - file_to_display.h * zoom) / 2;
 
-  showFile(files_to_display[position].icon.imgObj, x, y, files_to_display[position].icon.w * zoom, files_to_display[position].icon.h * zoom);
+  showFile(file_to_display.imgObj, x, y, file_to_display.w * zoom, file_to_display.h * zoom);
 }
 
 function clearFileIcons() {
@@ -321,6 +331,17 @@ function fileIndexAtHandCoords(x_coord, y_coord) {
     }
   }
 
+  if ((left_tutorial_img.x <= x_coord) && x_coord <= (left_tutorial_img.x + left_tutorial_img.w) &&
+      (left_tutorial_img.y <= y_coord) && y_coord <= (left_tutorial_img.y + left_tutorial_img.h)) {
+    console.log('left tutorial');
+    return 6; 
+  } 
+  if ((right_tutorial_img.x <= x_coord) && x_coord <= (right_tutorial_img.x + right_tutorial_img.w) &&
+     (right_tutorial_img.y <= y_coord) && y_coord <= (right_tutorial_img.y + right_tutorial_img.h)) {
+    console.log('right tutorial');
+    return 7; 
+  } 
+
   return -1;
 }
 
@@ -346,6 +367,10 @@ function drawHand(hand, flip=false) {
   } else if (trackingId != hand.trackingId) {
     return;
   }
+  let x_coord = Math.min(myCanvas.width, 3 * (hand.depthX - 0.5) * myCanvas.width / 2 + myCanvas.width / 2);
+  let y_coord = Math.min(myCanvas.height, 3 * (hand.depthY - 0.5) * myCanvas.height / 2 + myCanvas.height / 2);
+  x_coord = Math.max(0, x_coord);
+  y_coord = Math.max(0, y_coord); 
   var func = function logHandData(hands) {
     if (flip) {
       hands.leftHandState = [hands.rightHandState, hands.rightHandState = hands.leftHandState][0];
@@ -372,8 +397,6 @@ function drawHand(hand, flip=false) {
       if (ABLE_STATE != "disabled" && currentScreen === ScreenMode.FolderView) {
         if (rightStateBuf.length == stateBufSize && rightStateBuf[0] === 'closed') {
           let chosenIndex = -1;
-          let x_coord = hand.depthX * myCanvas.width;
-          let y_coord = hand.depthY * myCanvas.height; 
 
           chosenIndex = fileIndexAtHandCoords(x_coord, y_coord);
           console.log("chosenIndex: ", chosenIndex);
@@ -388,14 +411,20 @@ function drawHand(hand, flip=false) {
           // goToParentDir();
         }
         else {
-          let index = fileIndexAtHandCoords(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height);
+          let index = fileIndexAtHandCoords(x_coord, y_coord);
 
           if (index !== -1) {
             // Display border around file which the cursor is on top of
             stroke(135, 206, 250); // sets light-blue border around rect
             strokeWeight(6);
             noFill();
-            rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 59, files_to_display[index].icon.w, files_to_display[index].icon.h);
+            if (index == 6) {
+              rect(left_tutorial_img.x - 9, left_tutorial_img.y - 59, left_tutorial_img.w, left_tutorial_img.h);
+            } else if (index == 7) {
+              rect(right_tutorial_img.x - 9, right_tutorial_img.y - 59, right_tutorial_img.w, right_tutorial_img.h);
+            } else {
+              rect(files_to_display[index].icon.x - 9, files_to_display[index].icon.y - 59, files_to_display[index].icon.w, files_to_display[index].icon.h);
+            }
           }
         }
       }
@@ -426,8 +455,8 @@ function drawHand(hand, flip=false) {
     if (curIndex === -1) {
       addFileIconsToCanvas();
       currentScreen = ScreenMode.FolderView;
-    }
-    else if (files_to_display[curIndex].type === FileType.Folder) {
+    } 
+    else if (curIndex < 6 && files_to_display[curIndex].type === FileType.Folder) {
       let newPath = current_dir + files_to_display[curIndex].name + '/';
       curIndex = -1;
       loading = true;
@@ -444,7 +473,7 @@ function drawHand(hand, flip=false) {
   }
 
   fill(255);
-  ellipse(hand.depthX * myCanvas.width, hand.depthY * myCanvas.height, 25, 25);
+  ellipse(x_coord, y_coord, 25, 25);
 
   xSwipeBuf.push(hand.depthX);
   if (xSwipeBuf.length > 6) {
