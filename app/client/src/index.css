@@ -20,6 +20,11 @@ body {
     background-color: rgb(205, 219, 230);
 }
 
+#dir_input:hover {
+    color: black;
+    background-color: rgb(205, 219, 230);
+}
+
 /*
 #update {
     background-color: rgb(113, 206, 230);
@@ -49,4 +54,45 @@ body {
 
 #dir_input:focus + #notice {
     display: inline;
+}
+
+/* .video {
+    position: absolute;
+    /* margin-left: auto;
+    margin-right: auto;
+    left: 0;
+    right: 0; *-/
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    z-index: 99999999;
+    height: 25%;
+    width: 35%;
+} */
+
+.video-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    width: 75%;
+    height: 75%; 
+    overflow: hidden;
+    z-index: 9999;
+}
+
+.video-container video {
+    /* Make video to at least 100% wide and tall */
+    min-width: 100%; 
+    min-height: 100%; 
+
+    /* Setting width & height to auto prevents the browser from stretching or squishing the video */
+    width: 75%;
+    height: 75%;
+
+    /* Center the video */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
 }

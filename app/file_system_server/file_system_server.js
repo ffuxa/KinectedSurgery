@@ -3,7 +3,7 @@ const fs = require('fs')
 
 const app = express();
 const port = process.env.PORT || 5000;
-const img_regex = new RegExp('.jpg|.png', 'i')
+const img_regex = new RegExp('.jpg|.png|.mp4', 'i')
 
 app.use(express.json())
 

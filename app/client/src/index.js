@@ -20,6 +20,7 @@ let right_tutorial_img;
 
 // Folder icon for FolderView
 let folder_img_path = 'images/folder-icon.png';
+let video_img_path = 'images/video.png'; 
 
 // Used for multi-body tracking
 let trackingId = null;
@@ -33,7 +34,26 @@ let ySwipeBuf = [];
 let leftStateBuf = [];
 let rightStateBuf = [];
 
-let GLOBAL_KINECTRON;
+// Used for displaying video
+// Default value is there for a reason! Don't remove!!
+let videoPlayer = {
+  'elt': {
+    'style': "display: none;"
+  }
+};
+
+// Determines if the video is playing or not
+let playing = false;
+
+function isEmpty(obj) {
+  for (var key in obj) {
+      if (obj.hasOwnProperty(key))
+          return false;
+  }
+  return true;
+}
+
+// let videoSource = {};
 
 // Current directory (starts off as root). TODO: Unhardcode!!!!!!
 // let current_dir = "/Users/Fabian/Documents/College/Senior_2018/Semester_1/EECS_495/KinectedSurgery/app/client/src/sample_files/";
@@ -44,7 +64,7 @@ let ScreenMode = Object.freeze({ "FolderView": 1, "FileView": 2 });
 let currentScreen = ScreenMode.FolderView;
 
 // The different supported file types. Might change in future versions
-let FileType = Object.freeze({ "Image": 1, "Folder": 2 });
+let FileType = Object.freeze({ "Image": 1, "Folder": 2, "Video": 3 });
 
 // Loading variable
 let loading = false;
@@ -119,10 +139,16 @@ async function fetchAndUpdateCanvas(dir_path) {
       const icon = new Img(img); 
       files.push(new File(server_files[i].path, icon, FileType.Folder));
     }
+    else if (path.substr(-4) === '.mp4') {
+      const img = createImg(video_img_path);
+      img.hide();
+      const icon = new Img(img); 
+      files.push(new File(server_files[i].path, icon, FileType.Video));
+    }
+    // NOTE: This assumes all non-directory, non-mp4 elements are images. 
+    //  This is going to change if we add support to other file types,
+    //  like PDFs
     else {
-      // NOTE: This assumes all non-directory elements are images. 
-      //  This is going to change if we add support to other file types,
-      //  like PDFs and video
       const img = createImg(path);
       img.hide();
       const icon = new Img(img); 
@@ -173,6 +199,8 @@ async function setup() {
   textSize(42);
   textAlign(CENTER);
   text("Enter starting directory above", windowWidth/2, windowHeight/2 - 45);
+
+  // setTimeout(() => displayVideoFullScreen(0), 4000);
 }
 
 function showFile(imgObj, x, y, w, h) {
@@ -226,7 +254,7 @@ function addFileIconsToCanvas() {
   let i = 0;
 
   // This grabs 6 images at a time
-  files_to_display = files.slice(current_page * 6, current_page * 6 + 7);
+  files_to_display = files.slice(current_page * 6, current_page * 6 + 6);
 
   // Display each image
   for (x_coord = margin; x_coord < window.innerWidth; x_coord += file_width + margin) { 
@@ -284,7 +312,39 @@ function displayFileFullScreen(position, zoom) {
   showFile(file_to_display.imgObj, x, y, file_to_display.w * zoom, file_to_display.h * zoom);
 }
 
+function displayVideoFullScreen(index) {
+  clearFileIcons();
+  clear();
+
+  videoPlayer = createVideo(['http://localhost:5000/static/' + files_to_display[index].name]);
+  videoPlayer.elt.style = "position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 75%; height: 75%; overflow: hidden; z-index: 9999;";
+  videoPlayer.play();
+  playing = true;
+
+  // setTimeout(() => videoPlayer.pause(), 2000);
+  // setTimeout(() => {
+  //   addFileIconsToCanvas();
+  //   currentScreen = ScreenMode.FolderView;
+  // }, 6000);
+
+  // videoPlayer = document.getElementById("video");
+  // videoSource = document.getElementById("source");
+
+  // videoSource.src = 'http://localhost:5000/static/' + files_to_display[index].name;
+  // videoSource.type = 'video/mp4';
+  // videoPlayer.style = "display: initial;";
+
+  // videoPlayer.load();
+  // videoPlayer.play();
+}
+
 function clearFileIcons() {
+  if (videoPlayer.elt.style !== "display: none;") {
+    videoPlayer.pause();
+    videoPlayer.elt.style = "display: none;";
+    playing = false;
+  }
+
   files.forEach(function(file) {
     file.icon.imgObj.hide();
   });
@@ -303,7 +363,6 @@ function initKinectron() {
   kinectron.makeConnection();
 
   $('input[name=hand_choice]:radio').on('change', function(event, ui) {
-    console.log($(this).val());
     if ($(this).val() == 'left') {
       kinectron.startTrackedJoint(kinectron.HANDLEFT, drawLeftHand);
     }
@@ -355,8 +414,23 @@ function drawRightHand(hand) {
   drawHand(hand);
 }
 
+function insideVideo(hand) {
+  let x_coord = hand.depthX * myCanvas.width;
+  let y_coord = hand.depthY * myCanvas.height;
+
+  const x_lower = myCanvas.width * .125;
+  const x_higher = myCanvas.width * .875
+  const y_lower = myCanvas.height * .125;
+  const y_higher = myCanvas.height * .875;
+
+  if ((x_coord >= x_lower && x_coord <= x_higher) ||
+      (y_coord >= y_lower && y_coord <= y_higher)) {
+    return true;
+  }
+  return false;
+}
+
 function drawHand(hand, flip=false) {
-  console.log(document.querySelector('input[name=hand_choice]:checked').value);
   var current = Date.now();
   if (trackingId != null && lastTrackedTimes[trackingId] != undefined && current - lastTrackedTimes[trackingId] > 1000) {
     trackingId = hand.trackingId;
@@ -399,7 +473,6 @@ function drawHand(hand, flip=false) {
           let chosenIndex = -1;
 
           chosenIndex = fileIndexAtHandCoords(x_coord, y_coord);
-          console.log("chosenIndex: ", chosenIndex);
 
           if (chosenIndex == -1) {
             chosenIndex = -1; 
@@ -434,15 +507,31 @@ function drawHand(hand, flip=false) {
           // This goes back to FolderView
           curIndex = -1;
         }
-
-        if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'closed') {
-          zoom = 2; 
-        } 
-        else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'lasso') {
-          zoom = 3; 
+        
+        if (curIndex !== -1 && files_to_display[curIndex].type === FileType.Video) {
+          if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'closed') {
+            if (playing) {
+              videoPlayer.pause();
+              playing = false;
+            }
+          }
+          else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'lasso') {
+            if (!playing) {
+              videoPlayer.play();
+              playing = true;
+            }
+          }
         }
-        else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'open') {
-          zoom = 1; 
+        else if (curIndex !== -1 && files_to_display[curIndex].type === FileType.Image) {
+          if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'closed') {
+            zoom = 2; 
+          } 
+          else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'lasso') {
+            zoom = 3; 
+          }
+          else if (leftStateBuf.length == stateBufSize && leftStateBuf[0] === 'open') {
+            zoom = 1; 
+          }
         }
       }
     }
@@ -451,45 +540,72 @@ function drawHand(hand, flip=false) {
   clear();
 
   kinectron.getHands(func);
-  if(ABLE_STATE != "disabled") {
+  if (ABLE_STATE != "disabled") {
     if (curIndex === -1) {
       addFileIconsToCanvas();
       currentScreen = ScreenMode.FolderView;
-    } 
-    else if (curIndex < 6 && files_to_display[curIndex].type === FileType.Folder) {
-      let newPath = current_dir + files_to_display[curIndex].name + '/';
-      curIndex = -1;
-      loading = true;
-      fetchAndUpdateCanvas(newPath);
-      currentScreen = ScreenMode.FolderView;
-      setTimeout(() => {
-        loading = false;
-      }, 2000);
     }
+    else if (currentScreen === ScreenMode.FolderView) {
+      if (curIndex < 6 && files_to_display[curIndex].type === FileType.Folder) {
+        let newPath = current_dir + files_to_display[curIndex].name + '/';
+        curIndex = -1;
+        loading = true;
+        fetchAndUpdateCanvas(newPath);
+        currentScreen = ScreenMode.FolderView;
+        setTimeout(() => {
+          loading = false;
+        }, 2000);
+      }
+      else if (curIndex < 6 && files_to_display[curIndex].type === FileType.Video) {
+        displayVideoFullScreen(curIndex);
+        currentScreen = ScreenMode.FileView;
+      }
+      else {
+        displayFileFullScreen(curIndex, zoom);
+        currentScreen = ScreenMode.FileView;
+      }
+    }
+    // Triggers if currentScreen === ScreenMode.FileView
     else {
-      displayFileFullScreen(curIndex, zoom);
-      currentScreen = ScreenMode.FileView;
+      if (files_to_display[curIndex].type === FileType.Image) {
+        displayFileFullScreen(curIndex, zoom);
+        currentScreen = ScreenMode.FileView;
+      }
     }
   }
 
   fill(255);
   ellipse(x_coord, y_coord, 25, 25);
 
+
   xSwipeBuf.push(hand.depthX);
   if (xSwipeBuf.length > 6) {
     xSwipeBuf.shift();
   }  
   if (ABLE_STATE != "disabled" && Math.max(...xSwipeBuf) - hand.depthX > 0.32) {
-    console.log('swipe right');
     if (currentScreen === ScreenMode.FolderView) {
       nextPage();
+    }
+    else {
+      do {
+        curIndex += 1;
+        curIndex %= files_to_display.length;
+      } while(files_to_display[curIndex].type == ScreenMode.FileView);
+      displayFileFullScreen(curIndex, zoom);
     }
     xSwipeBuf = [];
   }
   if (ABLE_STATE != "disabled" && hand.depthX - Math.min(...xSwipeBuf) > 0.32) {
-    console.log('swipe left');
     if (currentScreen === ScreenMode.FolderView) {
       prevPage();
+    }
+    else {
+      do {
+        curIndex -= 1;
+        if(curIndex == -1) curIndex = files_to_display.length - 1;
+      }
+      while(files_to_display[curIndex].type == ScreenMode.FileView);
+      displayFileFullScreen(curIndex, zoom);
     }
     xSwipeBuf = [];
   }
@@ -499,32 +615,25 @@ function drawHand(hand, flip=false) {
     ySwipeBuf.shift();
   }  
   if (ABLE_STATE != "disabled" && Math.max(...ySwipeBuf) - hand.depthY > 0.32) {
-    console.log('swipe up');
     if (currentScreen === ScreenMode.FolderView) {
       goToParentDir();
     }
     ySwipeBuf = [];
   }
   if (hand.depthY - Math.min(...ySwipeBuf) > 0.32) {
-    if(ABLE_STATE == "enabled") {
+    if (ABLE_STATE == "enabled") {
       document.getElementById("disable").style.display = "block";
       document.getElementById("enable").style.display = "none";
-      console.log("enabled->buffer");
       ABLE_STATE = "buffer";
-      // GLOBAL_KINECTRON.stopAll();
       setTimeout(function () {
-        console.log("buffer->disabled");
         ABLE_STATE = "disabled";
       }, 1000);
     }
-    else if(ABLE_STATE == "disabled") {
+    else if (ABLE_STATE == "disabled") {
       document.getElementById("disable").style.display = "none";
       document.getElementById("enable").style.display = "block";
-      console.log("disabled->buffer");
       ABLE_STATE = "buffer";
-      // GLOBAL_KINECTRON.startTrackedJoint(kinectron.HANDRIGHT, drawRightHand);
       setTimeout(function () {
-        console.log("buffer->enabled");
         ABLE_STATE = "enabled";
       }, 1000);
     }
